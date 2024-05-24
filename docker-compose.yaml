@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  db:
+    image: mongo:7.0.9
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: development
+      MONGO_INITDB_ROOT_PASSWORD: development
+      MONGO_INITDB_DATABASE: reactive-bingo
+    ports:
+      - "27017:27017"
+    volumes:
+      - .docker/mongo/data:/data/db

@@ -69,5 +69,8 @@ Sugestão de endpoints:
 - spring-boot-starter-validation
 - spring-boot-starter-mail
 - spring-boot-starter-test
-- io.projectreactor:reactor-test
+- reactor-test
 - lombok
+- mapstruct
+- mapstruct-processor
+- lombok-mapstruct-binding
