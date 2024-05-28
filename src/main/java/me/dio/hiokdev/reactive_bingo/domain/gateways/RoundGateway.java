@@ -16,4 +16,6 @@ public interface RoundGateway {
 
     Mono<Round> findById(String id);
 
+    Mono<Boolean> existsByIdAndPlayerId(String id, String playerId);
+
 }
