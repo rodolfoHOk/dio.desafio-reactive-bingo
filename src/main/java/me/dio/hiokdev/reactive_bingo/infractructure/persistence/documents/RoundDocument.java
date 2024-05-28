@@ -17,7 +17,7 @@ public record RoundDocument(
         @Field("sorted_numbers") List<Integer> sortedNumbers,
         RoundStateEnum state,
         @CreatedDate @Field("created_at") OffsetDateTime createdAt,
-        @LastModifiedDate @Field("created_at") OffsetDateTime updatedAt
+        @LastModifiedDate @Field("updated_at") OffsetDateTime updatedAt
 ) {
 
     @Builder(toBuilder = true)
