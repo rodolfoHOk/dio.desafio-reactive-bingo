@@ -30,6 +30,10 @@ public record Round(
         return new RoundBuilder(id, bingoCards, sortedNumbers, state, createdAt, updatedAt);
     }
 
+    public Mono<Integer> getLastSortedNumber() {
+        return Flux.fromIterable(this.sortedNumbers).last();
+    }
+
     public Flux<BingoCard> getWinners() {
         return Flux.fromIterable(this.bingoCards)
                 .flatMap(bingoCard -> bingoCard.isCompleted()
