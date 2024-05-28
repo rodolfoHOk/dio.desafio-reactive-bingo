@@ -3,13 +3,13 @@ package me.dio.hiokdev.reactive_bingo.domain.models;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.SynchronousSink;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 public record BingoCard(
         String id,
@@ -28,17 +28,8 @@ public record BingoCard(
         return new BingoCardBuilder(id, player, numbers, hintCount, createdAt, updatedAt);
     }
 
-    public Boolean checkIsValid(List<BingoCard> bingoCards) {
-        for (BingoCard bingoCard : bingoCards) {
-            if (countDuplicates(this.numbers, bingoCard.numbers) > 5) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public Boolean isCompleted() {
-        return hintCount == 20;
+    public Mono<Boolean> isCompleted() {
+        return Mono.just(hintCount == 20);
     }
 
     @NoArgsConstructor
@@ -47,7 +38,7 @@ public record BingoCard(
 
         private String id;
         private Player player;
-        private List<Integer> numbers;
+        private List<Integer> numbers = List.of();
         private Integer hintCount;
         private OffsetDateTime createdAt;
         private OffsetDateTime updatedAt;
@@ -82,47 +73,56 @@ public record BingoCard(
             return this;
         }
 
-        public BingoCardBuilder generate(final Player player) {
-            this.id = ObjectId.get().toString();
-            this.player = player;
-            this.numbers = new ArrayList<>();
-            var random = new Random();
-            for(var i = 0; i < 20; i++) {
-                int preSortedNumber;
-                do {
-                    preSortedNumber = random.nextInt(100);
-                } while (numbers.contains(preSortedNumber));
-                this.numbers.add(preSortedNumber);
-            }
-            this.hintCount = 0;
-            this.createdAt = OffsetDateTime.now();
-            this.updatedAt = OffsetDateTime.now();
-            return this;
+        public Mono<BingoCardBuilder> generate(final Player player, final List<BingoCard> existingBingoCards) {
+            return generateNumbers(existingBingoCards, new Random())
+                    .map(numbers -> this.id(ObjectId.get().toString())
+                            .player(player)
+                            .numbers(numbers)
+                            .hintCount(0)
+                            .createdAt(OffsetDateTime.now())
+                            .updatedAt(OffsetDateTime.now()));
         }
 
-        public BingoCardBuilder incrementHintCountIfContains(final Integer sortedNumber) {
-            if (numbers.contains(sortedNumber)) {
-                ++ this.hintCount;
-                this.updatedAt = OffsetDateTime.now();
-            }
-            return this;
+        public Mono<BingoCardBuilder> incrementHintCountIfContains(final Integer sortedNumber) {
+            return Mono.defer(() -> {
+                if (numbers.contains(sortedNumber)) {
+                    ++this.hintCount;
+                    this.updatedAt = OffsetDateTime.now();
+                }
+                return Mono.just(this);
+            });
         }
 
         public BingoCard build() {
             return new BingoCard(id, player, numbers, hintCount, createdAt, updatedAt);
         }
 
-    }
-
-    private int countDuplicates(List<Integer> list1, List<Integer> list2) {
-        Set<Integer> set2 = new HashSet<>(list2);
-        int count = 0;
-        for (int num : list1) {
-            if (set2.contains(num)) {
-                count++;
-            }
+        private Mono<List<Integer>> generateNumbers(final List<BingoCard> existingBingoCards, final Random random) {
+            return Flux.generate((SynchronousSink<Integer> sink) -> sink.next(random.nextInt(100)))
+                    .distinct()
+                    .take(20)
+                    .collectSortedList()
+                    .flatMap(sortedNumbers -> numbersNotAreValid(sortedNumbers, existingBingoCards)
+                            .flatMap(notAreValid -> notAreValid
+                                    ? generateNumbers(existingBingoCards, random)
+                                    : Mono.just(sortedNumbers)));
         }
-        return count;
+
+        private Mono<Boolean> numbersNotAreValid(final List<Integer> sortedNumbers, final List<BingoCard> bingoCards) {
+            return Flux.fromIterable(bingoCards)
+                    .flatMap(bingoCard -> countDuplicates(sortedNumbers, bingoCard.numbers))
+                    .any(duplicates -> duplicates > 5);
+        }
+
+        private Mono<Long> countDuplicates(
+                final List<Integer> sortedNumbers,
+                final List<Integer> existingBingoCardNumbers
+        ) {
+            return Flux.fromIterable(sortedNumbers)
+                    .filter(existingBingoCardNumbers::contains)
+                    .count();
+        }
+
     }
 
 }
