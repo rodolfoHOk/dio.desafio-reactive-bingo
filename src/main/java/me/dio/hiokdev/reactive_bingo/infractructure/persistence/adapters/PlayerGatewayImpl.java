@@ -18,13 +18,13 @@ public class PlayerGatewayImpl implements PlayerGateway {
     private final PlayerDocumentMapper playerDocumentMapper;
 
     @Override
-    public Mono<Player> save(Player player) {
+    public Mono<Player> save(final Player player) {
         return playerDocumentRepository.save(playerDocumentMapper.toDocument(player))
                 .map(playerDocumentMapper::toDomainModel);
     }
 
     @Override
-    public Mono<PagedPlayers> findOnDemand(PageablePlayers pageable) {
+    public Mono<PagedPlayers> findOnDemand(final PageablePlayers pageable) {
         return findOnDemandPlayerRepository.findOnDemand(pageable)
                 .collectList()
                 .zipWhen(documents -> findOnDemandPlayerRepository.count(pageable))
@@ -38,13 +38,19 @@ public class PlayerGatewayImpl implements PlayerGateway {
     }
 
     @Override
-    public Mono<Player> findById(String id) {
+    public Mono<Player> findById(final String id) {
         return playerDocumentRepository.findById(id)
                 .map(playerDocumentMapper::toDomainModel);
     }
 
     @Override
-    public Mono<Void> delete(Player player) {
+    public Mono<Player> findByEmail(final String email) {
+        return  playerDocumentRepository.findByEmail(email)
+                .map(playerDocumentMapper::toDomainModel);
+    }
+
+    @Override
+    public Mono<Void> delete(final Player player) {
         return playerDocumentRepository.delete(playerDocumentMapper.toDocument(player));
     }
 

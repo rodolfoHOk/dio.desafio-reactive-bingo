@@ -13,6 +13,8 @@ public interface PlayerGateway {
 
     Mono<Player> findById(String id);
 
+    Mono<Player> findByEmail(String email);
+
     Mono<Void> delete(Player player);
 
 }

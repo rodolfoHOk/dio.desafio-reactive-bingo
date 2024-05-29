@@ -19,7 +19,7 @@ public class RoundGatewayImpl implements RoundGateway {
     private final RoundDocumentMapper roundDocumentMapper;
 
     @Override
-    public Mono<Round> save(Round round) {
+    public Mono<Round> save(final Round round) {
         return roundDocumentRepository.save(roundDocumentMapper.toDocument(round))
                 .map(roundDocumentMapper::toDomainModel);
     }
@@ -31,7 +31,7 @@ public class RoundGatewayImpl implements RoundGateway {
     }
 
     @Override
-    public Mono<PagedRounds> findOnDemand(PageableRounds pageable) {
+    public Mono<PagedRounds> findOnDemand(final PageableRounds pageable) {
         return findOnDemandRoundRepository.findOnDemand(pageable)
                 .collectList()
                 .zipWhen(documents -> findOnDemandRoundRepository.count(pageable))
@@ -45,13 +45,13 @@ public class RoundGatewayImpl implements RoundGateway {
     }
 
     @Override
-    public Mono<Round> findById(String id) {
+    public Mono<Round> findById(final String id) {
         return roundDocumentRepository.findById(id)
                 .map(roundDocumentMapper::toDomainModel);
     }
 
     @Override
-    public Mono<Boolean> existsByIdAndPlayerId(String id, String playerId) {
+    public Mono<Boolean> existsByIdAndPlayerId(final String id, final String playerId) {
         return roundDocumentRepository.existsByIdAndBingoCards_Player_Id(id, playerId);
     }
 
