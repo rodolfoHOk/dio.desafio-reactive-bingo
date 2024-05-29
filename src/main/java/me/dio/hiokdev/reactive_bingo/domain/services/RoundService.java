@@ -26,7 +26,9 @@ public class RoundService {
                 .flatMap(round -> round.toBuilder().sortNumber())
                 .map(Round.RoundBuilder::build)
                 .flatMap(roundGateway::save)
-                .flatMap(this::processIfHasWinners);
+                .flatMap(round -> round.winnersIds().isEmpty()
+                        ? round.getLastSortedNumber()
+                        : processIfHasWinners(round));
     }
 
     public Mono<BingoCard> generateBingoCard(final String id, final String playerId) {
@@ -43,9 +45,7 @@ public class RoundService {
     }
 
     private Mono<Integer> processIfHasWinners(final Round round) {
-        if (!round.winnersIds().isEmpty()) {
-            // TODO notify by email round result
-        }
+        // TODO notify by email round result
         return round.getLastSortedNumber();
     }
 
