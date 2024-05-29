@@ -41,4 +41,9 @@ public class RoundQueryService {
                 .flatMap(exists -> Mono.empty());
     }
 
+    public Mono<Integer> getLastSortedNumber(final String id) {
+        return this.findById(id)
+                .flatMap(Round::getLastSortedNumber);
+    }
+
 }
