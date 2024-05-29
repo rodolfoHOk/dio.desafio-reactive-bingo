@@ -11,6 +11,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -18,6 +19,7 @@ public record Round(
         String id,
         List<BingoCard> bingoCards,
         List<Integer> sortedNumbers,
+        List<String> winnersIds,
         RoundState state,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
@@ -28,18 +30,11 @@ public record Round(
     }
 
     public RoundBuilder toBuilder() {
-        return new RoundBuilder(id, bingoCards, sortedNumbers, state, createdAt, updatedAt);
+        return new RoundBuilder(id, bingoCards, sortedNumbers, winnersIds, state, createdAt, updatedAt);
     }
 
     public Mono<Integer> getLastSortedNumber() {
         return Flux.fromIterable(this.sortedNumbers).last();
-    }
-
-    public Flux<BingoCard> getWinners() {
-        return Flux.fromIterable(this.bingoCards)
-                .flatMap(bingoCard -> bingoCard.isCompleted()
-                        .filter(Boolean.TRUE::equals)
-                        .map(completed -> bingoCard));
     }
 
     @NoArgsConstructor
@@ -47,8 +42,9 @@ public record Round(
     public static class RoundBuilder {
 
         private String id;
-        private List<BingoCard> bingoCards = List.of();
-        private List<Integer> sortedNumbers = List.of();
+        private List<BingoCard> bingoCards;
+        private List<Integer> sortedNumbers;
+        private List<String> winnersIds;
         private RoundState state;
         private OffsetDateTime createdAt;
         private OffsetDateTime updatedAt;
@@ -78,6 +74,11 @@ public record Round(
             return this;
         }
 
+        public RoundBuilder winnersIds(final List<String> winnersIds) {
+            this.winnersIds = winnersIds;
+            return this;
+        }
+
         public RoundBuilder state(final RoundState state) {
             this.state = state;
             return this;
@@ -91,6 +92,15 @@ public record Round(
         public RoundBuilder updatedAt(final OffsetDateTime updatedAt) {
             this.updatedAt = updatedAt;
             return this;
+        }
+
+        public Mono<RoundBuilder> create() {
+            return Mono.just(this)
+                    .map(roundBuilder -> roundBuilder
+                            .state(RoundState.CREATED)
+                            .sortedNumbers(new ArrayList<>())
+                            .bingoCards(new ArrayList<>())
+                    );
         }
 
         public Mono<RoundBuilder> addBingoCard(final Player player) {
@@ -116,7 +126,8 @@ public record Round(
                 }
                 var random = new Random();
                 return sortUniqueNumber(random)
-                        .flatMap(this::processSortedNumber);
+                        .flatMap(this::processSortedNumber)
+                        .flatMap(RoundBuilder::checkAndPopulateWinners);
             });
         }
 
@@ -135,7 +146,7 @@ public record Round(
         }
 
         public Round build() {
-            return new Round(id, bingoCards, sortedNumbers, state, createdAt, updatedAt);
+            return new Round(id, bingoCards, sortedNumbers, winnersIds, state, createdAt, updatedAt);
         }
 
         private Mono<Integer> sortUniqueNumber(final Random random) {
@@ -158,10 +169,17 @@ public record Round(
                     .flatMap(bingoCard -> bingoCard.toBuilder().incrementHintCountIfContains(sortedNumber))
                     .map(BingoCard.BingoCardBuilder::build)
                     .collectList()
-                    .map(updatedCards -> {
-                        this.bingoCards = updatedCards;
-                        return this;
-                    });
+                    .map(this::bingoCards);
+        }
+
+        private Mono<RoundBuilder> checkAndPopulateWinners() {
+            return Flux.fromIterable(this.bingoCards)
+                    .flatMap(bingoCard -> bingoCard.isCompleted()
+                            .filter(Boolean.TRUE::equals)
+                            .map(completed -> bingoCard))
+                    .map(bingoCard -> bingoCard.player().id())
+                    .collectList()
+                    .map(this::winnersIds);
         }
 
     }

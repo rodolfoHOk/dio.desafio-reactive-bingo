@@ -15,6 +15,7 @@ public record RoundDocument(
         @Id String id,
         @Field("bingo_cards") List<BingoCardSubDocument> bingoCards,
         @Field("sorted_numbers") List<Integer> sortedNumbers,
+        @Field("winners_ids") List<String> winnersIds,
         RoundStateEnum state,
         @CreatedDate @Field("created_at") OffsetDateTime createdAt,
         @LastModifiedDate @Field("updated_at") OffsetDateTime updatedAt
