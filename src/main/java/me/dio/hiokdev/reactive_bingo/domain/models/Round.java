@@ -3,6 +3,7 @@ package me.dio.hiokdev.reactive_bingo.domain.models;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import me.dio.hiokdev.reactive_bingo.domain.enums.RoundState;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.BaseErrorMessage;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyInitiatedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedException;
@@ -95,7 +96,8 @@ public record Round(
         public Mono<RoundBuilder> addBingoCard(final Player player) {
             return Mono.defer(() -> {
                 if (state != RoundState.CREATED) {
-                    return Mono.error(new RoundAlreadyInitiatedException("Rodada já foi iniciada"));
+                    return Mono.error(new RoundAlreadyInitiatedException(BaseErrorMessage
+                            .ROUND_ALREADY_INITIATED.params(this.id).getMessage()));
                 }
                 return BingoCard.builder().generate(player, this.bingoCards)
                         .map(BingoCard.BingoCardBuilder::build)
@@ -106,7 +108,8 @@ public record Round(
         public Mono<RoundBuilder> sortNumber() {
             return Mono.defer(() -> {
                 if (state == RoundState.FINISHED) {
-                    return Mono.error(new RoundAlreadyFinishedException("Rodada já foi terminada"));
+                    return Mono.error(new RoundAlreadyFinishedException(BaseErrorMessage
+                            .ROUND_ALREADY_FINISHED.params(this.id).getMessage()));
                 }
                 if (state == RoundState.CREATED) {
                     this.state = RoundState.INITIATED;
@@ -120,10 +123,12 @@ public record Round(
         public Mono<RoundBuilder> finish() {
             return Mono.defer(() -> {
                 if (state == RoundState.FINISHED) {
-                    return Mono.error(new RoundAlreadyFinishedException("Rodada já foi terminada"));
+                    return Mono.error(new RoundAlreadyFinishedException(BaseErrorMessage
+                            .ROUND_ALREADY_FINISHED.params(this.id).getMessage()));
                 }
                 if (state == RoundState.INITIATED) {
-                    return Mono.error(new RoundNotInitiatedException("Rodada ainda não foi iniciada"));
+                    return Mono.error(new RoundNotInitiatedException(BaseErrorMessage
+                            .ROUND_NOT_INITIATED.params(this.id).getMessage()));
                 }
                 return Mono.just(this.state(RoundState.FINISHED).updatedAt(OffsetDateTime.now()));
             });

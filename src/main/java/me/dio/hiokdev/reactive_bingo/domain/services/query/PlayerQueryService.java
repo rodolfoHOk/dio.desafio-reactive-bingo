@@ -3,6 +3,7 @@ package me.dio.hiokdev.reactive_bingo.domain.services.query;
 import lombok.RequiredArgsConstructor;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PagedPlayers;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.BaseErrorMessage;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.PlayerGateway;
 import me.dio.hiokdev.reactive_bingo.domain.models.Player;
@@ -19,16 +20,16 @@ public class PlayerQueryService {
         return playerGateway.findById(id)
                 .filter(Objects::nonNull)
                 .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new NotFoundException("Jogador não encontrado com identificador informado: "
-                                + id))));
+                        .error(new NotFoundException(BaseErrorMessage
+                                .PLAYER_NOT_FOUND_WITH_ID.params(id).getMessage()))));
     }
 
     public Mono<Player> findByEmail(final String email) {
         return playerGateway.findByEmail(email)
                 .filter(Objects::nonNull)
                 .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new NotFoundException("Jogador não encontrado com e-mail informado: "
-                                + email))));
+                        .error(new NotFoundException(BaseErrorMessage
+                                .PLAYER_NOT_FOUND_WITH_EMAIL.params(email).getMessage()))));
     }
 
     public Mono<PagedPlayers> findOnDemand(final PageablePlayers pageable) {

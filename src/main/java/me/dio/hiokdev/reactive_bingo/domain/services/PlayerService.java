@@ -2,6 +2,7 @@ package me.dio.hiokdev.reactive_bingo.domain.services;
 
 
 import lombok.RequiredArgsConstructor;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.BaseErrorMessage;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.EmailAlreadyUsedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.PlayerGateway;
@@ -21,8 +22,8 @@ public class PlayerService {
         return playerQueryService.findByEmail(player.email())
                 .filter(Objects::isNull)
                 .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new EmailAlreadyUsedException("Já existe jogador cadastro com o e-mail informado: "
-                                + player.email()))))
+                        .error(new EmailAlreadyUsedException(BaseErrorMessage
+                                .PLAYER_EMAIL_ALREADY_USED.params(player.email()).getMessage()))))
                 .onErrorResume(NotFoundException.class, e -> playerGateway.save(player));
     }
 
@@ -45,8 +46,8 @@ public class PlayerService {
         return playerQueryService.findByEmail(player.email())
                 .filter(existingPlayer -> player.id().equals(existingPlayer.id()))
                 .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new EmailAlreadyUsedException("Já existe jogador cadastro com o e-mail informado: "
-                                + player.email()))))
+                        .error(new EmailAlreadyUsedException(BaseErrorMessage
+                                .PLAYER_EMAIL_ALREADY_USED.params(player.email()).getMessage()))))
                 .onErrorResume(NotFoundException.class, e -> Mono.empty())
                 .flatMap(existingPlayer -> Mono.empty());
     }
