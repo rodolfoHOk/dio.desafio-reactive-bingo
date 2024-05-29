@@ -179,7 +179,10 @@ public record Round(
                             .map(completed -> bingoCard))
                     .map(bingoCard -> bingoCard.player().id())
                     .collectList()
-                    .map(this::winnersIds);
+                    .map(this::winnersIds)
+                    .flatMap(roundBuilder -> roundBuilder.winnersIds.isEmpty()
+                            ? Mono.just(roundBuilder)
+                            : roundBuilder.finish());
         }
 
     }
