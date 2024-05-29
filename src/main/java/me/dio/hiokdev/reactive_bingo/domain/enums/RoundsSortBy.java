@@ -8,8 +8,7 @@ import lombok.Getter;
 public enum RoundsSortBy {
 
     STATE("state"),
-    CREATE_DATE("created_at"),
-    UPDATE_DATE("updated_at");
+    CREATE_DATE("created_at");
 
     private final String field;
 

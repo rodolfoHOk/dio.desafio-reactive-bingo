@@ -62,6 +62,10 @@ Sugestão de endpoints:
 - MongoDB
 - Docker
 
+## Boas práticas
+
+- Hexagonal Architecture
+
 ## Bibliotecas utilizadas
 
 - spring-boot-starter-webflux
@@ -74,3 +78,4 @@ Sugestão de endpoints:
 - mapstruct
 - mapstruct-processor
 - lombok-mapstruct-binding
+- commons-lang3
