@@ -19,17 +19,15 @@ public class PlayerQueryService {
     public Mono<Player> findById(final String id) {
         return playerGateway.findById(id)
                 .filter(Objects::nonNull)
-                .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new NotFoundException(BaseErrorMessage
-                                .PLAYER_NOT_FOUND_WITH_ID.params(id).getMessage()))));
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(BaseErrorMessage
+                        .PLAYER_NOT_FOUND_WITH_ID.params(id).getMessage()))));
     }
 
     public Mono<Player> findByEmail(final String email) {
         return playerGateway.findByEmail(email)
                 .filter(Objects::nonNull)
-                .switchIfEmpty(Mono.defer(() -> Mono
-                        .error(new NotFoundException(BaseErrorMessage
-                                .PLAYER_NOT_FOUND_WITH_EMAIL.params(email).getMessage()))));
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new NotFoundException(BaseErrorMessage
+                        .PLAYER_NOT_FOUND_WITH_EMAIL.params(email).getMessage()))));
     }
 
     public Mono<PagedPlayers> findOnDemand(final PageablePlayers pageable) {

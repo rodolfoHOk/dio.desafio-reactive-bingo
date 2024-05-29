@@ -42,5 +42,7 @@ public class BaseErrorMessage {
     public static final BaseErrorMessage ROUND_ALREADY_INITIATED = new BaseErrorMessage("round.alreadyInitiated");
     public static final BaseErrorMessage ROUND_ALREADY_FINISHED = new BaseErrorMessage("round.alreadyFinished");
     public static final BaseErrorMessage ROUND_NOT_INITIATED = new BaseErrorMessage("round.notInitiated");
+    public static final BaseErrorMessage ROUND_NOT_FOUND = new BaseErrorMessage("round.notFound");
+    public static final BaseErrorMessage BINGO_CARD_ALREADY_EXISTS = new BaseErrorMessage("bingoCard.alreadyExists");
 
 }
