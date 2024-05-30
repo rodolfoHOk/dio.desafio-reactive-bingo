@@ -1,8 +1,10 @@
 package me.dio.hiokdev.reactive_bingo.application.mappers;
 
+import me.dio.hiokdev.reactive_bingo.application.dto.requests.PageablePlayersRequest;
 import me.dio.hiokdev.reactive_bingo.application.dto.requests.PlayerRequest;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedPlayersResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PlayerResponse;
+import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PagedPlayers;
 import me.dio.hiokdev.reactive_bingo.domain.models.Player;
 import org.mapstruct.Mapper;
@@ -23,5 +25,7 @@ public interface PlayerMapper {
     PlayerResponse toResponse(final Player domainModel);
 
     PagedPlayersResponse toResponse(final PagedPlayers domainDto);
+
+    PageablePlayers toDomainDto(final PageablePlayersRequest request);
 
 }
