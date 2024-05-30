@@ -8,7 +8,7 @@ import me.dio.hiokdev.reactive_bingo.domain.models.Player;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface PlayerMapper {
 
     @Mapping(target = "id", ignore = true)
