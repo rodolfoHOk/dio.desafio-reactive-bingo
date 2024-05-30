@@ -13,6 +13,7 @@ public record Player(
 ) {
 
     @Builder(toBuilder = true)
-    public Player {}
+    public Player {
+    }
 
 }
