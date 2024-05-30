@@ -29,8 +29,7 @@ public class PlayersUseCasesImpl implements PlayersUseCases {
     @Override
     public Mono<PlayerResponse> update(final String id, final PlayerRequest request) {
         return Mono.just(request)
-                .map(playerMapper::toDomainModel)
-                .map(player -> player.toBuilder().id(id).build())
+                .map(requestBody -> playerMapper.toDomainModel(requestBody, id))
                 .flatMap(playerService::update)
                 .map(playerMapper::toResponse);
     }

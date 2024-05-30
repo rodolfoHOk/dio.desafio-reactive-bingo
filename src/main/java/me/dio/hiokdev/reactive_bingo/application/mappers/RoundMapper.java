@@ -11,9 +11,9 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface RoundMapper {
 
-    RoundResponse toDomainDto(final Round domainModel);
+    RoundResponse toResponse(final Round domainModel);
 
-    PagedRoundsResponse toDomainDto(final PagedRounds domainDto);
+    PagedRoundsResponse toResponse(final PagedRounds domainDto);
 
     PageableRounds toDomainDto(final PageableRoundsRequest request);
 
