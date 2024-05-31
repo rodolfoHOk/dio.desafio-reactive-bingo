@@ -6,9 +6,9 @@ import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedPlayersRespo
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PlayerResponse;
 import reactor.core.publisher.Mono;
 
-public interface PlayersUseCases {
+public interface PlayerUseCases {
 
-    Mono<PlayerResponse> save(PlayerRequest request);
+    Mono<PlayerResponse> create(PlayerRequest request);
 
     Mono<PlayerResponse> update(String id, PlayerRequest request);
 

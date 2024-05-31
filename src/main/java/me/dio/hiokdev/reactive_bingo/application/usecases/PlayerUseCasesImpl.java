@@ -6,20 +6,20 @@ import me.dio.hiokdev.reactive_bingo.application.dto.requests.PlayerRequest;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedPlayersResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PlayerResponse;
 import me.dio.hiokdev.reactive_bingo.application.mappers.PlayerMapper;
-import me.dio.hiokdev.reactive_bingo.application.ports.PlayersUseCases;
+import me.dio.hiokdev.reactive_bingo.application.ports.PlayerUseCases;
 import me.dio.hiokdev.reactive_bingo.domain.services.PlayerService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.PlayerQueryService;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class PlayersUseCasesImpl implements PlayersUseCases {
+public class PlayerUseCasesImpl implements PlayerUseCases {
 
     private final PlayerService playerService;
     private final PlayerQueryService playerQueryService;
     private final PlayerMapper playerMapper;
 
     @Override
-    public Mono<PlayerResponse> save(final PlayerRequest request) {
+    public Mono<PlayerResponse> create(final PlayerRequest request) {
         return Mono.just(request)
                 .map(playerMapper::toDomainModel)
                 .flatMap(playerService::save)
