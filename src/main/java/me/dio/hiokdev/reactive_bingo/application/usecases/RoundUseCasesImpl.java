@@ -5,6 +5,7 @@ import me.dio.hiokdev.reactive_bingo.application.dto.requests.PageableRoundsRequ
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.BingoCardResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedRoundsResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.RoundResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.SortedNumberResponse;
 import me.dio.hiokdev.reactive_bingo.application.mappers.BingoCardMapper;
 import me.dio.hiokdev.reactive_bingo.application.mappers.RoundMapper;
 import me.dio.hiokdev.reactive_bingo.application.ports.RoundUseCases;
@@ -28,8 +29,9 @@ public class RoundUseCasesImpl implements RoundUseCases {
     }
 
     @Override
-    public Mono<Integer> generateNextNumber(final String id) {
-        return roundService.generateNextNumber(id);
+    public Mono<SortedNumberResponse> generateNextNumber(final String id) {
+        return roundService.generateNextNumber(id)
+                .map(number -> SortedNumberResponse.builder().sortedNumber(number).build());
     }
 
     @Override
@@ -39,8 +41,9 @@ public class RoundUseCasesImpl implements RoundUseCases {
     }
 
     @Override
-    public Mono<Integer> getLastSortedNumber(final String id) {
-        return roundQueryService.getLastSortedNumber(id);
+    public Mono<SortedNumberResponse> getLastSortedNumber(final String id) {
+        return roundQueryService.getLastSortedNumber(id)
+                .map(number -> SortedNumberResponse.builder().sortedNumber(number).build());
     }
 
     @Override
