@@ -1,6 +1,7 @@
 package me.dio.hiokdev.reactive_bingo.application.dto.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -9,15 +10,19 @@ import java.util.List;
 
 public record ProblemResponse(
         @JsonProperty("status")
+        @Schema(description = "Http status retornado", example = "400")
         Integer status,
 
         @JsonProperty("description")
+        @Schema(description = "Descrição do erro", example = "Sua requisição tem informações inválidas")
         String description,
 
         @JsonProperty("timestamp")
+        @Schema(description = "Momento em que o erro aconteceu", format = "datetime", example = "2021-01-02T10:15:30-03:00")
         OffsetDateTime timestamp,
 
         @JsonProperty("fields")
+        @Schema(description = "Caso a requisição tenha parâmetros inválidos aqui serão informados os erros referentes aos mesmos")
         List<FieldErrorResponse> fields
 ) {
 
