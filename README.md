@@ -1,4 +1,4 @@
-# Desafio do curso Spring WebFlux: Reactive Bingo
+# Desafio do curso Spring WebFlux: Reactive Bingo (in development)
 
 Criar uma API de jogo de Bingo usando as seguintes tecnologias:
 
@@ -79,3 +79,4 @@ Sugestão de endpoints:
 - mapstruct-processor
 - lombok-mapstruct-binding
 - commons-lang3
+- springdoc-openapi-starter-webflux-ui
