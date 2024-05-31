@@ -9,6 +9,7 @@ import me.dio.hiokdev.reactive_bingo.application.dto.responses.RoundResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.SortedNumberResponse;
 import me.dio.hiokdev.reactive_bingo.application.ports.RoundUseCases;
 import me.dio.hiokdev.reactive_bingo.core.validation.MongoId;
+import me.dio.hiokdev.reactive_bingo.infractructure.web.controllers.documentation.RoundControllerDoc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,16 +24,18 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("rounds")
 @RequiredArgsConstructor
-public class RoundController {
+public class RoundController implements RoundControllerDoc {
 
     private final RoundUseCases roundUseCases;
 
+    @Override
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<RoundResponse> create() {
         return roundUseCases.create();
     }
 
+    @Override
     @PostMapping(value = "{id}/generate-number", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<SortedNumberResponse> generateNextNumber(
             @PathVariable @Valid @MongoId(message = "{roundController.id}") final String id
@@ -40,6 +43,7 @@ public class RoundController {
         return roundUseCases.generateNextNumber(id);
     }
 
+    @Override
     @PostMapping(value = "{id}/bingo-card/{playerId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<BingoCardResponse> generateBingoCard(
             @PathVariable @Valid @MongoId(message = "{roundController.id}") final String id,
@@ -48,6 +52,7 @@ public class RoundController {
         return roundUseCases.generateBingoCard(id, playerId);
     }
 
+    @Override
     @GetMapping(value = "{id}/current-number", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<SortedNumberResponse> getLastSortedNumber(
             @PathVariable @Valid @MongoId(message = "{roundController.id}") final String id
@@ -55,6 +60,7 @@ public class RoundController {
         return roundUseCases.getLastSortedNumber(id);
     }
 
+    @Override
     @GetMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<RoundResponse> findById(
             @PathVariable @Valid @MongoId(message = "{roundController.id}") final String id
@@ -62,11 +68,13 @@ public class RoundController {
         return roundUseCases.findById(id);
     }
 
+    @Override
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Flux<RoundResponse> findAll() {
         return roundUseCases.findAll();
     }
 
+    @Override
     @GetMapping(value = "search", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<PagedRoundsResponse> findOnDemand(@Valid final PageableRoundsRequest request) {
         return roundUseCases.findOnDemand(request);

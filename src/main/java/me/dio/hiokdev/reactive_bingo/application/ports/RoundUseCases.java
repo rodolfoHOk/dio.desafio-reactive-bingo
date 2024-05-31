@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface RoundUseCases {
+
     Mono<RoundResponse> create();
 
     Mono<SortedNumberResponse> generateNextNumber(String id);
@@ -22,4 +23,5 @@ public interface RoundUseCases {
     Flux<RoundResponse> findAll();
 
     Mono<PagedRoundsResponse> findOnDemand(PageableRoundsRequest request);
+
 }
