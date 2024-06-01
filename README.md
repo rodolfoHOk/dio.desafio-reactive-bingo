@@ -72,6 +72,7 @@ Sugestão de endpoints:
 - spring-boot-starter-data-mongodb-reactive
 - spring-boot-starter-validation
 - spring-boot-starter-mail
+- spring-boot-starter-thymeleaf
 - spring-boot-starter-test
 - reactor-test
 - lombok

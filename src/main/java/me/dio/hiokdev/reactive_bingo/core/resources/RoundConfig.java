@@ -5,6 +5,7 @@ import me.dio.hiokdev.reactive_bingo.application.mappers.RoundMapper;
 import me.dio.hiokdev.reactive_bingo.application.ports.RoundUseCases;
 import me.dio.hiokdev.reactive_bingo.application.usecases.RoundUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.RoundGateway;
+import me.dio.hiokdev.reactive_bingo.domain.services.MailService;
 import me.dio.hiokdev.reactive_bingo.domain.services.RoundService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.PlayerQueryService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.RoundQueryService;
@@ -36,9 +37,10 @@ public class RoundConfig {
     public RoundService roundService(
             final PlayerQueryService playerQueryService,
             final RoundQueryService roundQueryService,
-            final RoundGateway roundGateway
-    ) {
-        return new RoundService(playerQueryService, roundQueryService, roundGateway);
+            final RoundGateway roundGateway,
+            final MailService mailService
+            ) {
+        return new RoundService(playerQueryService, roundQueryService, roundGateway, mailService);
     }
 
     @Bean

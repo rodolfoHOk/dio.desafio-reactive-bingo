@@ -1,12 +1,15 @@
 package me.dio.hiokdev.reactive_bingo.domain.services;
 
 import lombok.RequiredArgsConstructor;
+import me.dio.hiokdev.reactive_bingo.domain.dto.MailMessage;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.RoundGateway;
 import me.dio.hiokdev.reactive_bingo.domain.models.BingoCard;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.PlayerQueryService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.RoundQueryService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RequiredArgsConstructor
 public class RoundService {
@@ -14,6 +17,7 @@ public class RoundService {
     private final PlayerQueryService playerQueryService;
     private final RoundQueryService roundQueryService;
     private final RoundGateway roundGateway;
+    private final MailService mailService;
 
     public Mono<Round> create() {
         return Round.builder().create()
@@ -28,7 +32,9 @@ public class RoundService {
                 .flatMap(roundGateway::save)
                 .flatMap(round -> round.winnersIds().isEmpty()
                         ? round.getLastSortedNumber()
-                        : processIfHasWinners(round));
+                        : round.getLastSortedNumber()
+                        .onTerminateDetach()
+                        .doOnSuccess(lastSortedNumber -> processIfHasWinners(round)));
     }
 
     public Mono<BingoCard> generateBingoCard(final String id, final String playerId) {
@@ -44,9 +50,27 @@ public class RoundService {
                         .getFirst());
     }
 
-    private Mono<Integer> processIfHasWinners(final Round round) {
-        // TODO notify by email round result
-        return round.getLastSortedNumber();
+    private void processIfHasWinners(final Round round) {
+        Flux.fromIterable(round.bingoCards())
+                .flatMap(bingoCard -> bingoCard.isCompleted()
+                        .zipWith(Mono.just(bingoCard))
+                        .flatMap(tuple -> tuple.getT1()
+                                ? notifyWinner(round, tuple.getT2())
+                                : notifyPlayer(round, tuple.getT2())))
+                .then()
+                .subscribeOn(Schedulers.parallel());
+    }
+
+    private Mono<Void> notifyPlayer(final Round round, final BingoCard bingoCard) {
+        return playerQueryService.findById(bingoCard.id())
+                .map(player -> MailMessage.create(round, player, bingoCard))
+                .flatMap(mailService::send);
+    }
+
+    private Mono<Void> notifyWinner(final Round round, final BingoCard bingoCard) {
+        return playerQueryService.findById(bingoCard.id())
+                .map(player -> MailMessage.createWinner(round, player, bingoCard))
+                .flatMap(mailService::send);
     }
 
 }
