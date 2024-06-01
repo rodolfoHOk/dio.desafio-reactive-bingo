@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reactive Bingo Winner</title>
+</head>
+
+<body style="font-family: sans-serif; font-size: 14px;">
+
+    <p th:text="${'Parabéns ' + playerName + '! Você ganhou esta rodada do bingo!. Segue abaixo o resultado do bingo referente a rodada ' + roundId}">
+        Parabéns {Fulano}! Você ganhou esta rodada do bingo!. Segue abaixo o resultado do bingo referente a rodada {Tal}:
+    </p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tbody>
+            <tr style="border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">
+                <td style="padding: 8px 0; font-weight: bold;">Seus números</td>
+                <td style="padding: 8px 0;" th:text="${cardNumbers}">1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                    18, 19, 20
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ccc; padding: 8px 0;">
+                <td style="padding: 8px 0; font-weight: bold;">Números sorteados</td>
+                <td style="padding: 8px 0;" th:text="${sortedNumbers}">1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+                </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ccc; padding: 8px 0;">
+                <td style="padding: 8px 0; font-weight: bold;">Contagem de acertos</td>
+                <td style="padding: 8px 0;" th:text="${hintCount}">20</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+
+</html>

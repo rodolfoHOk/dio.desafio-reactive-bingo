@@ -11,3 +11,9 @@ services:
       - "27017:27017"
     volumes:
       - .docker/mongo/data:/data/db
+
+  mailcatcher:
+    image: dockage/mailcatcher:0.9
+    ports:
+      - "1025:1025"
+      - "1080:1080"
