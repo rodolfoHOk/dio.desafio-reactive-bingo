@@ -1,5 +1,7 @@
 package me.dio.hiokdev.reactive_bingo.core.factory.dto;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PagedPlayers;
@@ -8,6 +10,7 @@ import me.dio.hiokdev.reactive_bingo.domain.models.Player;
 import java.util.List;
 import java.util.stream.Stream;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PagedPlayersFactory {
 
     public static PagedPlayersFactoryBuilder builder(final Integer pageSize) {
