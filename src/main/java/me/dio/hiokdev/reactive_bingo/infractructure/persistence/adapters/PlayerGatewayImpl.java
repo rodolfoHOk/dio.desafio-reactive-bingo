@@ -45,7 +45,7 @@ public class PlayerGatewayImpl implements PlayerGateway {
 
     @Override
     public Mono<Player> findByEmail(final String email) {
-        return  playerDocumentRepository.findByEmail(email)
+        return playerDocumentRepository.findByEmail(email)
                 .map(playerDocumentMapper::toDomainModel);
     }
 
