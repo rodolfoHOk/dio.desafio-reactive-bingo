@@ -37,6 +37,7 @@ public class BaseErrorMessage {
     public static final BaseErrorMessage GENERIC_BAD_REQUEST = new BaseErrorMessage("generic.badRequest");
     public static final BaseErrorMessage GENERIC_METHOD_NOT_ALLOWED = new BaseErrorMessage("generic.methodNotAllowed");
     public static final BaseErrorMessage GENERIC_MAX_RETRIES = new BaseErrorMessage("generic.maxRetries");
+    public static final BaseErrorMessage GENERIC_MAX_RECURSION = new BaseErrorMessage("generic.maxRecursionExceeded");
     public static final BaseErrorMessage PLAYER_NOT_FOUND_WITH_ID = new BaseErrorMessage("player.notFoundWithId");
     public static final BaseErrorMessage PLAYER_NOT_FOUND_WITH_EMAIL = new BaseErrorMessage("player.notFoundWithEmail");
     public static final BaseErrorMessage PLAYER_EMAIL_ALREADY_USED = new BaseErrorMessage("player.emailAlreadyUsed");

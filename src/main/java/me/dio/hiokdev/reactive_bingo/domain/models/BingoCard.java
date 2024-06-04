@@ -2,6 +2,8 @@ package me.dio.hiokdev.reactive_bingo.domain.models;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.BaseErrorMessage;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RecursionException;
 import org.bson.types.ObjectId;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,6 +45,8 @@ public record BingoCard(
         private OffsetDateTime createdAt;
         private OffsetDateTime updatedAt;
 
+        private static final int RECURSION_LIMIT = 50;
+
         public BingoCardBuilder id(final String id) {
             this.id = id;
             return this;
@@ -74,7 +78,7 @@ public record BingoCard(
         }
 
         public Mono<BingoCardBuilder> generate(final Player player, final List<BingoCard> existingBingoCards) {
-            return generateNumbers(existingBingoCards, new Random())
+            return generateNumbers(existingBingoCards, new Random(), 0)
                     .map(numbers -> this.id(ObjectId.get().toString())
                             .player(player)
                             .numbers(numbers)
@@ -97,14 +101,21 @@ public record BingoCard(
             return new BingoCard(id, player, numbers, hintCount, createdAt, updatedAt);
         }
 
-        private Mono<List<Integer>> generateNumbers(final List<BingoCard> existingBingoCards, final Random random) {
+        private Mono<List<Integer>> generateNumbers(
+                final List<BingoCard> existingBingoCards,
+                final Random random,
+                int recursionCount
+        ) {
+            if (recursionCount >= RECURSION_LIMIT) {
+                return Mono.error(new RecursionException(BaseErrorMessage.GENERIC_MAX_RECURSION.getMessage()));
+            }
             return Flux.generate((SynchronousSink<Integer> sink) -> sink.next(random.nextInt(100)))
                     .distinct()
                     .take(20)
                     .collectSortedList()
                     .flatMap(sortedNumbers -> numbersNotAreValid(sortedNumbers, existingBingoCards)
                             .flatMap(notAreValid -> notAreValid
-                                    ? generateNumbers(existingBingoCards, random)
+                                    ? generateNumbers(existingBingoCards, random, recursionCount + 1)
                                     : Mono.just(sortedNumbers)));
         }
 

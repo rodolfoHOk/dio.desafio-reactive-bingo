@@ -11,6 +11,7 @@ import me.dio.hiokdev.reactive_bingo.domain.exceptions.BingoCardAlreadyExistsExc
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.EmailAlreadyUsedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.ReactiveBingoException;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RecursionException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyInitiatedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedException;
@@ -47,6 +48,7 @@ public class ApiExceptionHandler implements WebExceptionHandler {
                 .onErrorResume(BingoCardAlreadyExistsException.class, e -> handleBingoCardAlreadyExistsException(exchange, e))
                 .onErrorResume(EmailAlreadyUsedException.class, e -> handleEmailAlreadyUsedException(exchange, e))
                 .onErrorResume(NotFoundException.class, e -> handleNotFoundException(exchange, e))
+                .onErrorResume(RecursionException.class, e -> handleRecursionException(exchange, e))
                 .onErrorResume(ConstraintViolationException.class, e -> handleConstraintViolationException(exchange, e))
                 .onErrorResume(WebExchangeBindException.class, e -> handleWebExchangeBindException(exchange, e))
                 .onErrorResume(MethodNotAllowedException.class, e -> handleMethodNotAllowedException(exchange, e))
@@ -84,6 +86,11 @@ public class ApiExceptionHandler implements WebExceptionHandler {
 
     private Mono<Void> handleNotFoundException(ServerWebExchange exchange, NotFoundException ex) {
         return Mono.just(ProblemResponse.builder().create(HttpStatus.NOT_FOUND.value(), ex.getMessage()).build())
+                .flatMap(problemResponse -> writeResponse(exchange, problemResponse));
+    }
+
+    private Mono<Void> handleRecursionException(ServerWebExchange exchange, RecursionException ex) {
+        return Mono.just(ProblemResponse.builder().create(HttpStatus.LOOP_DETECTED.value(), ex.getMessage()).build())
                 .flatMap(problemResponse -> writeResponse(exchange, problemResponse));
     }
 
