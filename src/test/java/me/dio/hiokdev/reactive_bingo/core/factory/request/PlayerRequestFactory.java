@@ -1,9 +1,12 @@
 package me.dio.hiokdev.reactive_bingo.core.factory.request;
 
 import com.github.javafaker.Faker;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import me.dio.hiokdev.reactive_bingo.application.dto.requests.PlayerRequest;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PlayerRequestFactory {
 
     public static PlayerRequestFactoryBuilder builder() {
