@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RoundDocumentFactory {
 
-    private static RoundDocumentFactoryBuilder builder(final Round round) {
+    public static RoundDocumentFactoryBuilder builder(final Round round) {
         return new RoundDocumentFactoryBuilder(round);
     }
 

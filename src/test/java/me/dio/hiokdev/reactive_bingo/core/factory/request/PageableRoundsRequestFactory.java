@@ -9,6 +9,7 @@ import me.dio.hiokdev.reactive_bingo.domain.enums.RoundsSortBy;
 import me.dio.hiokdev.reactive_bingo.domain.enums.SortDirection;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.concurrent.TimeUnit;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -31,7 +32,7 @@ public class PageableRoundsRequestFactory {
 
         public PageableRoundsRequestFactoryBuilder() {
             this.sentence = faker.lorem().sentence();
-            this.startDate = OffsetDateTime.from(faker.date().past(365, TimeUnit.DAYS).toInstant());
+            this.startDate = faker.date().past(365, TimeUnit.DAYS).toInstant().atOffset(ZoneOffset.ofHours(-3));
             this.endDate = OffsetDateTime.now();
             this.page = faker.number().numberBetween(0L, 3L);
             this.limit = faker.number().numberBetween(20, 40);
@@ -40,12 +41,12 @@ public class PageableRoundsRequestFactory {
         }
 
         public PageableRoundsRequestFactoryBuilder futureStartDate() {
-            this.startDate = OffsetDateTime.from(faker.date().future(1, TimeUnit.DAYS).toInstant());
+            this.startDate = faker.date().future(1, TimeUnit.DAYS).toInstant().atOffset(ZoneOffset.ofHours(-3));
             return this;
         }
 
         public PageableRoundsRequestFactoryBuilder futureEndDate() {
-            this.endDate = OffsetDateTime.from(faker.date().future(1, TimeUnit.DAYS).toInstant());
+            this.endDate = faker.date().future(1, TimeUnit.DAYS).toInstant().atOffset(ZoneOffset.ofHours(-3));
             return this;
         }
 
