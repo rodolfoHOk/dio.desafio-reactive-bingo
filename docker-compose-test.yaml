@@ -4,10 +4,8 @@ services:
   db:
     image: mongo:7.0.9
     environment:
-      MONGO_INITDB_ROOT_USERNAME: testing
-      MONGO_INITDB_ROOT_PASSWORD: testing
+      MONGO_INITDB_ROOT_USERNAME: reactive-bingo
+      MONGO_INITDB_ROOT_PASSWORD: reactive-bingo
       MONGO_INITDB_DATABASE: reactive-bingo-test
     ports:
       - "27017:27017"
-    volumes:
-      - .docker/mongo/data:/data/db
