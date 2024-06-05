@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PageableRoundsRequestFactory {
 
+    public static PageableRoundsRequestFactoryBuilder builder() {
+        return new PageableRoundsRequestFactoryBuilder();
+    }
+
     public static class PageableRoundsRequestFactoryBuilder {
 
         private String sentence;

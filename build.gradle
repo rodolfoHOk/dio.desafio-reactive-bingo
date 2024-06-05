@@ -47,6 +47,8 @@ dependencies {
 	testImplementation ('com.github.javafaker:javafaker:1.0.2') { exclude module: 'snakeyaml' }
 	testImplementation 'org.yaml:snakeyaml:2.2'
 	testImplementation 'org.projectlombok:lombok'
+
+	testAnnotationProcessor 'org.projectlombok:lombok'
 	
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

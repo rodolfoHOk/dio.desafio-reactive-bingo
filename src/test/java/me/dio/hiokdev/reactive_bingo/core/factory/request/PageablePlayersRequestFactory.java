@@ -11,6 +11,10 @@ import me.dio.hiokdev.reactive_bingo.domain.enums.SortDirection;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PageablePlayersRequestFactory {
 
+    public static PageablePlayersRequestFactoryBuilder builder() {
+        return new PageablePlayersRequestFactoryBuilder();
+    }
+
     public static class PageablePlayersRequestFactoryBuilder {
 
         private String sentence;
