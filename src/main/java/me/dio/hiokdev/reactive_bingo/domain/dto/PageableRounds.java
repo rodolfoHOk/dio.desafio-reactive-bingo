@@ -6,6 +6,7 @@ import me.dio.hiokdev.reactive_bingo.domain.enums.SortDirection;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public record PageableRounds(
         String sentence,
@@ -20,7 +21,8 @@ public record PageableRounds(
     @Builder(toBuilder = true)
     public PageableRounds {
         sentence = ObjectUtils.defaultIfNull(sentence, "");
-        startDate = ObjectUtils.defaultIfNull(startDate, OffsetDateTime.MIN);
+        startDate = ObjectUtils.defaultIfNull(startDate, OffsetDateTime
+                .of(1900, 1,1,0,0,0,0, ZoneOffset.ofHours(-3)));
         endDate = ObjectUtils.defaultIfNull(endDate, OffsetDateTime.now());
         page = ObjectUtils.defaultIfNull(page, 1L);
         limit = ObjectUtils.defaultIfNull(limit, 20);

@@ -8,8 +8,8 @@ import lombok.Getter;
 public enum RoundStateEnum {
 
     CREATED("created"),
-    INITIATED("initiated"),
-    FINISHED("finished");
+    FINISHED("finished"),
+    INITIATED("initiated");
 
     private final String description;
 
