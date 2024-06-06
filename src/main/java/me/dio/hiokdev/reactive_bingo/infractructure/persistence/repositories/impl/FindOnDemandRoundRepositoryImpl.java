@@ -36,12 +36,6 @@ public class FindOnDemandRoundRepositoryImpl {
         return queryBuilder.buildWhere(new Query(), pageable.sentence(), "state")
                 .flatMap(query -> queryBuilder
                         .buildDateCriteria(query, "createdAt", pageable.startDate(), pageable.endDate()))
-                .map(query -> query
-                        .with(pageable.sortDirection() == SortDirection.ASC
-                                ? Sort.by(pageable.sortBy().getField()).ascending()
-                                : Sort.by(pageable.sortBy().getField()).descending())
-                        .skip(pageable.getSkip())
-                        .limit(pageable.limit()))
                 .flatMap(query -> template.count(query, RoundDocument.class));
     }
 

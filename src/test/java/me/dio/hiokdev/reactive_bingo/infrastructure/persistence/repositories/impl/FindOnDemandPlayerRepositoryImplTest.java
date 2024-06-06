@@ -6,6 +6,8 @@ import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.document.PlayerDocumentFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
+import me.dio.hiokdev.reactive_bingo.domain.enums.PlayerSortBy;
+import me.dio.hiokdev.reactive_bingo.domain.enums.SortDirection;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.documents.PlayerDocument;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.repositories.PlayerDocumentRepository;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.repositories.impl.FindOnDemandPlayerRepositoryImpl;
@@ -13,6 +15,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -58,7 +63,7 @@ public class FindOnDemandPlayerRepositoryImplTest {
     }
 
     @Test
-    void whenFindOnDemandFilterBySentenceThenReturnPagedPlayers() {
+    void whenFindOnDemandFilterBySentenceThenReturnPlayers() {
         var selectRandomDocument = storedDocuments.get(faker.number().numberBetween(0, storedDocuments.size()));
         var sentence = faker.bool().bool() ? selectRandomDocument.name().substring(1, 3)
                 : selectRandomDocument.email().substring(1, 3);
@@ -74,6 +79,57 @@ public class FindOnDemandPlayerRepositoryImplTest {
                     assertThat(actual.size()).isEqualTo(expectedSize);
                     var actualList = new ArrayList<>(actual);
                     assertThat(actualList).isSortedAccordingTo(Comparator.comparing(PlayerDocument::name));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void whenCountFilterBySentenceThenReturnInteger() {
+        var selectRandomDocument = storedDocuments.get(faker.number().numberBetween(0, storedDocuments.size()));
+        var sentence = faker.bool().bool() ? selectRandomDocument.name().substring(1, 3)
+                : selectRandomDocument.email().substring(1, 3);
+        var pageable = PageablePlayers.builder().sentence(sentence).build();
+
+        StepVerifier.create(findOnDemandPlayerRepository.count(pageable))
+                .assertNext(actual -> {
+                    var expectedSize = storedDocuments.stream()
+                            .filter(document -> document.name().contains(sentence) || document.email().contains(sentence))
+                            .count();
+                    assertThat(actual).isEqualTo(expectedSize);
+                })
+                .verifyComplete();
+    }
+
+    private static Stream<Arguments> whenFindOnDemandSortByThenReturnPlayersInOrder() {
+        return Stream.of(
+                Arguments.of(
+                    PageablePlayers.builder().sortBy(PlayerSortBy.NAME).sortDirection(SortDirection.ASC).build(),
+                    Comparator.comparing(PlayerDocument::name)
+                ),
+                Arguments.of(
+                        PageablePlayers.builder().sortBy(PlayerSortBy.NAME).sortDirection(SortDirection.DESC).build(),
+                        Comparator.comparing(PlayerDocument::name).reversed()
+                ),
+                Arguments.of(
+                        PageablePlayers.builder().sortBy(PlayerSortBy.EMAIL).sortDirection(SortDirection.ASC).build(),
+                        Comparator.comparing(PlayerDocument::email)
+                ),
+                Arguments.of(
+                        PageablePlayers.builder().sortBy(PlayerSortBy.EMAIL).sortDirection(SortDirection.DESC).build(),
+                        Comparator.comparing(PlayerDocument::email).reversed()
+                )
+        );
+    }
+
+    @MethodSource
+    @ParameterizedTest
+    void whenFindOnDemandSortByThenReturnPlayersInOrder(final PageablePlayers pageable, final Comparator<PlayerDocument> comparator) {
+        StepVerifier.create(findOnDemandPlayerRepository.findOnDemand(pageable))
+                .recordWith(ArrayList::new)
+                .thenConsumeWhile(actual -> true)
+                .consumeRecordedWith(actual -> {
+                    var actualList = new ArrayList<>(actual);
+                    assertThat(actualList).isSortedAccordingTo(comparator);
                 })
                 .verifyComplete();
     }

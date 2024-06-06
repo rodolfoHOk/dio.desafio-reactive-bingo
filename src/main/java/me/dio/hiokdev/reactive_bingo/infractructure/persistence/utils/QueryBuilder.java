@@ -42,8 +42,7 @@ public class QueryBuilder {
             Date start = DateUtils.toDate(startDate);
             Date end = DateUtils.toDate(endDate);
             Criteria dateCriteria = Criteria.where(dateFieldName).gte(start).lte(end);
-            query.addCriteria(dateCriteria);
-            return query;
+            return query.addCriteria(dateCriteria);
         });
     }
 

@@ -34,12 +34,6 @@ public class FindOnDemandPlayerRepositoryImpl {
 
     public Mono<Long> count(final PageablePlayers pageable) {
         return queryBuilder.buildWhere(new Query(), pageable.sentence(), List.of("name", "email"))
-                .map(query -> query
-                        .with(pageable.sortDirection() == SortDirection.ASC
-                                ? Sort.by(pageable.sortBy().getField()).ascending()
-                                : Sort.by(pageable.sortBy().getField()).descending())
-                        .skip(pageable.getSkip())
-                        .limit(pageable.limit()))
                 .flatMap(query -> template.count(query, PlayerDocument.class));
     }
 
