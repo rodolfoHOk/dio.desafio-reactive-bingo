@@ -36,6 +36,7 @@ dependencies {
 	implementation "org.mapstruct:mapstruct:$mapstructVersion"
 	implementation 'org.apache.commons:commons-lang3:3.14.0'
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.5.0'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-java8time:3.0.4.RELEASE'
 
 	compileOnly 'org.projectlombok:lombok'
 	
@@ -48,6 +49,7 @@ dependencies {
 	testImplementation ('com.github.javafaker:javafaker:1.0.2') { exclude module: 'snakeyaml' }
 	testImplementation 'org.yaml:snakeyaml:2.2'
 	testImplementation 'org.projectlombok:lombok'
+	testImplementation 'com.icegreen:greenmail:2.0.1'
 
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	
