@@ -2,11 +2,20 @@ package me.dio.hiokdev.reactive_bingo.domain.services;
 
 import com.github.javafaker.Faker;
 import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
+import com.icegreen.greenmail.util.ServerSetupTest;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
+import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
 import me.dio.hiokdev.reactive_bingo.core.retry.RetryConfig;
 import me.dio.hiokdev.reactive_bingo.core.retry.RetryHelper;
+import me.dio.hiokdev.reactive_bingo.domain.dto.MailMessage;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.MailGateway;
+import me.dio.hiokdev.reactive_bingo.domain.models.BingoCard;
+import me.dio.hiokdev.reactive_bingo.domain.models.Player;
+import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.infractructure.mail.adapters.MailGatewayImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.mail.MailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,20 +32,25 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.templatemode.TemplateMode;
+import reactor.test.StepVerifier;
 
 import java.util.Properties;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 public class MailServiceTest {
 
-    private static final Integer PORT = 80;
+    private static final Integer PORT = 8081;
     private static final String USER = "teste@teste.com.br";
     private static final String PASSWORD = "123456";
 
     @Autowired
     private ApplicationContext applicationContext;
 
+    private String sender;
     private GreenMail smtpServer;
     private MailService mailService;
     private final Faker faker = FakerData.getFaker();
@@ -45,7 +58,7 @@ public class MailServiceTest {
     @BeforeEach
     void setup() {
         this.smtpServer = createSmtpServer(PORT, USER, PASSWORD);
-        String sender = faker.internet().emailAddress();
+        this.sender = faker.internet().emailAddress();
         var host = smtpServer.getSmtp().getServerSetup().getBindAddress();
         JavaMailSender mailSender = createMailSender(host, PORT, USER, PASSWORD);
         TemplateEngine templateEngine = createTemplateEngine(applicationContext);
@@ -61,19 +74,47 @@ public class MailServiceTest {
     }
 
     @Test
-    void whenSendToWinnerThenReturnVoid() {
-        MailMessage winnerMailMessage = null;
-        // TODO
+    void whenSendToWinnerThenReturnVoid() throws MessagingException {
+        Round round = RoundFactory.builder().build();
+        Player player = PlayerFactory.builder().build();
+        round = round.toBuilder().addBingoCard(player).block().build();
+        for (int i = 0; i < 30; i++) {
+            round = round.toBuilder().sortNumber().block().build();
+        }
+        BingoCard bingoCard = round.bingoCards().get(0);
+        MailMessage winnerMailMessage = MailMessage.createWinner(round, player, bingoCard);
+
+        StepVerifier.create(mailService.send(winnerMailMessage)).verifyComplete();
+        assertThat(smtpServer.getReceivedMessages().length).isOne();
+        var message = Stream.of(smtpServer.getReceivedMessages()).findFirst().orElseThrow();
+        assertThat(message.getSubject()).isEqualTo(winnerMailMessage.subject());
+        assertThat(message.getRecipients(Message.RecipientType.TO))
+                .contains(new InternetAddress(winnerMailMessage.destination()));
+        assertThat(message.getHeader("FROM")).contains(sender);
     }
 
     @Test
-    void whenSendToNonWinnerThenReturnVoid() {
-        MailMessage mailMessage = null;
-        // TODO
+    void whenSendToNonWinnerThenReturnVoid() throws MessagingException {
+        Round round = RoundFactory.builder().build();
+        Player player = PlayerFactory.builder().build();
+        round = round.toBuilder().addBingoCard(player).block().build();
+        for (int i = 0; i < 30; i++) {
+            round = round.toBuilder().sortNumber().block().build();
+        }
+        BingoCard bingoCard = round.bingoCards().get(0);
+        MailMessage winnerMailMessage = MailMessage.create(round, player, bingoCard);
+
+        StepVerifier.create(mailService.send(winnerMailMessage)).verifyComplete();
+        assertThat(smtpServer.getReceivedMessages().length).isOne();
+        var message = Stream.of(smtpServer.getReceivedMessages()).findFirst().orElseThrow();
+        assertThat(message.getSubject()).isEqualTo(winnerMailMessage.subject());
+        assertThat(message.getRecipients(Message.RecipientType.TO))
+                .contains(new InternetAddress(winnerMailMessage.destination()));
+        assertThat(message.getHeader("FROM")).contains(sender);
     }
 
     private GreenMail createSmtpServer(Integer port, String user, String password) {
-        var smtpServer = new GreenMail(new ServerSetup(port, null, "smtp"));
+        var smtpServer = new GreenMail(ServerSetupTest.SMTP.port(port));
         smtpServer.setUser(user, password);
         return smtpServer;
     }
