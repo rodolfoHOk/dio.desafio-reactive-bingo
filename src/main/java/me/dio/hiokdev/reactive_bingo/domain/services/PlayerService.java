@@ -29,7 +29,7 @@ public class PlayerService {
 
     public Mono<Player> update(Player player) {
         return verifyEmail(player)
-                .flatMap(unused -> playerQueryService.findById(player.id()))
+                .then(Mono.defer(() -> playerQueryService.findById(player.id())))
                 .map(existingPlayer -> player.toBuilder()
                         .createdAt(existingPlayer.createdAt())
                         .updatedAt(existingPlayer.updatedAt())
@@ -42,14 +42,14 @@ public class PlayerService {
                 .flatMap(playerGateway::delete);
     }
 
-    public Mono<Player> verifyEmail(final Player player) {
+    private Mono<Void> verifyEmail(final Player player) {
         return playerQueryService.findByEmail(player.email())
                 .filter(existingPlayer -> player.id().equals(existingPlayer.id()))
                 .switchIfEmpty(Mono.defer(() -> Mono
                         .error(new EmailAlreadyUsedException(BaseErrorMessage
                                 .PLAYER_EMAIL_ALREADY_USED.params(player.email()).getMessage()))))
                 .onErrorResume(NotFoundException.class, e -> Mono.empty())
-                .flatMap(existingPlayer -> Mono.empty());
+                .then();
     }
 
 }

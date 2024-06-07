@@ -30,18 +30,6 @@ public class PlayerDocumentFactory {
             this.updatedAt = player.updatedAt();
         }
 
-        public PlayerDocumentFactoryBuilder preInsert() {
-            this.id = null;
-            this.createdAt = null;
-            this.updatedAt = null;
-            return this;
-        }
-
-        public PlayerDocumentFactoryBuilder preUpdate(final String id) {
-            this.id = id;
-            return this;
-        }
-
         public PlayerDocument build() {
             return PlayerDocument.builder()
                     .id(id)
