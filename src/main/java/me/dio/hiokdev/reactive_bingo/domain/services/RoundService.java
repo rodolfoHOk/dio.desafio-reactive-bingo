@@ -39,7 +39,7 @@ public class RoundService {
 
     public Mono<BingoCard> generateBingoCard(final String id, final String playerId) {
         return roundQueryService.verifyIfExistsByIdAndPlayerId(id, playerId)
-                .flatMap(unused -> playerQueryService.findById(playerId))
+                .then(Mono.defer(() -> playerQueryService.findById(playerId)))
                 .zipWhen(player -> roundQueryService.findById(id))
                 .flatMap(tuple -> tuple.getT2().toBuilder().addBingoCard(tuple.getT1()))
                 .map(Round.RoundBuilder::build)
@@ -52,23 +52,21 @@ public class RoundService {
 
     private void processIfHasWinners(final Round round) {
         Flux.fromIterable(round.bingoCards())
-                .flatMap(bingoCard -> bingoCard.isCompleted()
-                        .zipWith(Mono.just(bingoCard))
-                        .flatMap(tuple -> tuple.getT1()
-                                ? notifyWinner(round, tuple.getT2())
-                                : notifyPlayer(round, tuple.getT2())))
-                .then()
-                .subscribeOn(Schedulers.parallel());
+                .flatMap(bingoCard -> round.winnersIds().contains(bingoCard.player().id())
+                        ? notifyWinner(round, bingoCard)
+                        : notifyPlayer(round, bingoCard))
+                .subscribeOn(Schedulers.parallel())
+                .subscribe();
     }
 
     private Mono<Void> notifyPlayer(final Round round, final BingoCard bingoCard) {
-        return playerQueryService.findById(bingoCard.id())
+        return playerQueryService.findById(bingoCard.player().id())
                 .map(player -> MailMessage.create(round, player, bingoCard))
                 .flatMap(mailService::send);
     }
 
     private Mono<Void> notifyWinner(final Round round, final BingoCard bingoCard) {
-        return playerQueryService.findById(bingoCard.id())
+        return playerQueryService.findById(bingoCard.player().id())
                 .map(player -> MailMessage.createWinner(round, player, bingoCard))
                 .flatMap(mailService::send);
     }

@@ -76,13 +76,10 @@ public class MailServiceTest {
     @Test
     void whenSendToWinnerThenReturnVoid() throws MessagingException {
         Round round = RoundFactory.builder().build();
-        Player player = PlayerFactory.builder().build();
-        round = round.toBuilder().addBingoCard(player).block().build();
-        for (int i = 0; i < 30; i++) {
-            round = round.toBuilder().sortNumber().block().build();
-        }
+        round = RoundFactory.generateCards(10, round);
+        round = RoundFactory.generateSortedNumbers(30, round);
         BingoCard bingoCard = round.bingoCards().get(0);
-        MailMessage winnerMailMessage = MailMessage.createWinner(round, player, bingoCard);
+        MailMessage winnerMailMessage = MailMessage.createWinner(round, bingoCard.player(), bingoCard);
 
         StepVerifier.create(mailService.send(winnerMailMessage)).verifyComplete();
         assertThat(smtpServer.getReceivedMessages().length).isOne();
@@ -96,13 +93,10 @@ public class MailServiceTest {
     @Test
     void whenSendToNonWinnerThenReturnVoid() throws MessagingException {
         Round round = RoundFactory.builder().build();
-        Player player = PlayerFactory.builder().build();
-        round = round.toBuilder().addBingoCard(player).block().build();
-        for (int i = 0; i < 30; i++) {
-            round = round.toBuilder().sortNumber().block().build();
-        }
+        round = RoundFactory.generateCards(10, round);
+        round = RoundFactory.generateSortedNumbers(30, round);
         BingoCard bingoCard = round.bingoCards().get(0);
-        MailMessage winnerMailMessage = MailMessage.create(round, player, bingoCard);
+        MailMessage winnerMailMessage = MailMessage.create(round, bingoCard.player(), bingoCard);
 
         StepVerifier.create(mailService.send(winnerMailMessage)).verifyComplete();
         assertThat(smtpServer.getReceivedMessages().length).isOne();

@@ -6,7 +6,6 @@ import me.dio.hiokdev.reactive_bingo.domain.enums.RoundState;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.BaseErrorMessage;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyInitiatedException;
-import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -100,6 +99,7 @@ public record Round(
                             .state(RoundState.CREATED)
                             .sortedNumbers(new ArrayList<>())
                             .bingoCards(new ArrayList<>())
+                            .winnersIds(new ArrayList<>())
                     );
         }
 
@@ -128,20 +128,6 @@ public record Round(
                 return sortUniqueNumber(random)
                         .flatMap(this::processSortedNumber)
                         .flatMap(RoundBuilder::checkAndPopulateWinners);
-            });
-        }
-
-        public Mono<RoundBuilder> finish() {
-            return Mono.defer(() -> {
-                if (state == RoundState.FINISHED) {
-                    return Mono.error(new RoundAlreadyFinishedException(BaseErrorMessage
-                            .ROUND_ALREADY_FINISHED.params(this.id).getMessage()));
-                }
-                if (state == RoundState.INITIATED) {
-                    return Mono.error(new RoundNotInitiatedException(BaseErrorMessage
-                            .ROUND_NOT_INITIATED.params(this.id).getMessage()));
-                }
-                return Mono.just(this.state(RoundState.FINISHED).updatedAt(OffsetDateTime.now()));
             });
         }
 
@@ -183,6 +169,10 @@ public record Round(
                     .flatMap(roundBuilder -> roundBuilder.winnersIds.isEmpty()
                             ? Mono.just(roundBuilder)
                             : roundBuilder.finish());
+        }
+
+        private Mono<RoundBuilder> finish() {
+            return Mono.just(this.state(RoundState.FINISHED).updatedAt(OffsetDateTime.now()));
         }
 
     }

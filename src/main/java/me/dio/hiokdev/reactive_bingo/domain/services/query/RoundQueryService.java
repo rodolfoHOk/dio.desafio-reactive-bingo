@@ -40,7 +40,7 @@ public class RoundQueryService {
                 .filter(Boolean.FALSE::equals)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new BingoCardAlreadyExistsException(BaseErrorMessage
                         .BINGO_CARD_ALREADY_EXISTS.params(playerId, id).getMessage()))))
-                .flatMap(exists -> Mono.empty());
+                .then();
     }
 
     public Mono<Integer> getLastSortedNumber(final String id) {

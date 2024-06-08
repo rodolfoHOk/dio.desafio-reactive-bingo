@@ -31,7 +31,7 @@ public record BingoCard(
     }
 
     public Mono<Boolean> isCompleted() {
-        return Mono.just(hintCount == 20);
+        return Mono.just(hintCount >= 20);
     }
 
     @NoArgsConstructor
@@ -79,7 +79,7 @@ public record BingoCard(
 
         public Mono<BingoCardBuilder> generate(final Player player, final List<BingoCard> existingBingoCards) {
             return generateNumbers(existingBingoCards, new Random(), 0)
-                    .map(numbers -> this.id(ObjectId.get().toString())
+                    .map(numbers -> BingoCard.builder().id(ObjectId.get().toString())
                             .player(player)
                             .numbers(numbers)
                             .hintCount(0)

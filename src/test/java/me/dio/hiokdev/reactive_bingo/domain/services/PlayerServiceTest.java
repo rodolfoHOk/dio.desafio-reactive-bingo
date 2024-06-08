@@ -1,7 +1,5 @@
 package me.dio.hiokdev.reactive_bingo.domain.services;
 
-import com.github.javafaker.Faker;
-import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.EmailAlreadyUsedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
@@ -40,9 +38,6 @@ public class PlayerServiceTest {
     private PlayerDocumentRepository playerDocumentRepository;
     @Mock
     private FindOnDemandPlayerRepositoryImpl findOnDemandPlayerRepository;
-    private final PlayerDocumentMapper playerDocumentMapper = new PlayerDocumentMapperImpl();
-    private PlayerGateway playerGateway;
-    private final Faker faker = FakerData.getFaker();
 
     @Mock
     private PlayerQueryService playerQueryService;
@@ -51,7 +46,8 @@ public class PlayerServiceTest {
 
     @BeforeEach
     void setup() {
-        playerGateway = new PlayerGatewayImpl(playerDocumentRepository, findOnDemandPlayerRepository, playerDocumentMapper);
+        PlayerDocumentMapper playerDocumentMapper = new PlayerDocumentMapperImpl();
+        PlayerGateway playerGateway = new PlayerGatewayImpl(playerDocumentRepository, findOnDemandPlayerRepository, playerDocumentMapper);
         this.playerService = new PlayerService(playerQueryService, playerGateway);
     }
 

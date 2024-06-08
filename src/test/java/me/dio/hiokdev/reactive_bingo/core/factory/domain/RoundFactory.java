@@ -23,6 +23,38 @@ public class RoundFactory {
         return new RoundFactoryBuilder();
     }
 
+    public static Round generateCards(final Integer quantity, final Round round) {
+        var updateRound = round;
+        for (int i = 0; i < quantity; i++) {
+            var player = PlayerFactory.builder().build();
+            updateRound = updateRound.toBuilder().addBingoCard(player).block().build();
+        }
+        return updateRound;
+    }
+
+    public static Round generateSortedNumbers(final Integer quantity, final Round round) {
+        var updateRound = round;
+        for (int i = 0; i < quantity; i++) {
+            updateRound = updateRound.toBuilder().sortNumber().block().build();
+        }
+        return updateRound;
+    }
+
+    public static Round createFinishedRound() {
+        var round = RoundFactory.builder().build();
+        round = RoundFactory.generateCards(10, round);
+        while (round.winnersIds().isEmpty()) {
+            round = round.toBuilder().sortNumber().block().build();
+        }
+        return round;
+    }
+
+    public static Round createRoundToFinish() {
+        var round = createFinishedRound();
+        round = round.toBuilder().winnersIds(new ArrayList<>()).state(RoundState.INITIATED).build();
+        return round;
+    }
+
     public static class RoundFactoryBuilder {
 
         private String id;
@@ -48,13 +80,6 @@ public class RoundFactory {
 
         public RoundFactoryBuilder randomState() {
             this.state = FakerData.randomEnum(RoundState.class);
-            return this;
-        }
-
-        public RoundFactoryBuilder preInsert() {
-            this.id = null;
-            this.createdAt = null;
-            this.updatedAt = null;
             return this;
         }
 

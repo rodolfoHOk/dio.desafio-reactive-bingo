@@ -5,7 +5,7 @@ import me.dio.hiokdev.reactive_bingo.infractructure.persistence.documents.RoundD
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BingoCardSubDocumentMapper.class})
 public interface RoundDocumentMapper {
 
     @Mapping(target = "bingoCard", ignore = true)

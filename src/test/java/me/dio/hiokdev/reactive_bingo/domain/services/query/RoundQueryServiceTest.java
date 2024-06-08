@@ -14,6 +14,8 @@ import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedExceptio
 import me.dio.hiokdev.reactive_bingo.domain.gateways.RoundGateway;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.adapters.RoundGatewayImpl;
+import me.dio.hiokdev.reactive_bingo.infractructure.persistence.mappers.BingoCardSubDocumentMapper;
+import me.dio.hiokdev.reactive_bingo.infractructure.persistence.mappers.BingoCardSubDocumentMapperImpl;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.mappers.RoundDocumentMapper;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.mappers.RoundDocumentMapperImpl;
 import me.dio.hiokdev.reactive_bingo.infractructure.persistence.repositories.RoundDocumentRepository;
@@ -25,7 +27,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Flux;
@@ -51,7 +55,11 @@ public class RoundQueryServiceTest {
     private RoundDocumentRepository roundDocumentRepository;
     @Mock
     private FindOnDemandRoundRepositoryImpl findOnDemandRoundRepository;
-    private final RoundDocumentMapper roundDocumentMapper = new RoundDocumentMapperImpl();
+    @Spy
+    private BingoCardSubDocumentMapper bingoCardSubDocumentMapper = new BingoCardSubDocumentMapperImpl();
+    @InjectMocks
+    private RoundDocumentMapper roundDocumentMapper = new RoundDocumentMapperImpl();
+
     private RoundQueryService roundQueryService;
     private static final Faker faker = FakerData.getFaker();
 
