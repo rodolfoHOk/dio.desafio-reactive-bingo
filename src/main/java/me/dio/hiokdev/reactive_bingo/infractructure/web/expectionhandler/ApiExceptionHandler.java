@@ -18,6 +18,7 @@ import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedExceptio
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -32,6 +33,7 @@ import org.springframework.web.server.WebExceptionHandler;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Order(-2)
 @Component
 @RequiredArgsConstructor
 public class ApiExceptionHandler implements WebExceptionHandler {

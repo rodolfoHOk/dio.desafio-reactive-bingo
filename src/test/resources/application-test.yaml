@@ -4,5 +4,3 @@ spring:
   data:
     mongodb:
       uri: mongodb://reactive-bingo:reactive-bingo@localhost:27017/reactive-bingo-test?authSource=admin
-  webflux:
-    base-path: /bingo-api
