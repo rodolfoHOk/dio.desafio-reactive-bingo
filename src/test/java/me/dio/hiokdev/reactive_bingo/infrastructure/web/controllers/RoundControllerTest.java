@@ -2,12 +2,18 @@ package me.dio.hiokdev.reactive_bingo.infrastructure.web.controllers;
 
 import com.github.javafaker.Faker;
 import me.dio.hiokdev.reactive_bingo.ReactiveBingoApplication;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.FieldErrorResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.ProblemResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.RoundResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.SortedNumberResponse;
 import me.dio.hiokdev.reactive_bingo.application.mappers.BingoCardMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.mappers.RoundMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.usecases.RoundUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
+import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.domain.services.RoundService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.RoundQueryService;
@@ -20,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -31,6 +38,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -83,6 +91,80 @@ public class RoundControllerTest {
                     assertThat(responseBody.winnersIds()).isEmpty();
                 });
         verify(roundService, times(1)).create();
+    }
+
+    @Test
+    void whenGenerateNextNumberThenReturnOk() {
+        var generatedNumber = faker.number().numberBetween(1, 99);
+        when(roundService.generateNextNumber(anyString())).thenReturn(Mono.just(generatedNumber));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/generate-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(SortedNumberResponse.class)
+                .value(responseBody -> assertThat(responseBody.sortedNumber()).isEqualTo(generatedNumber));
+        verify(roundService, times(1)).generateNextNumber(anyString());
+    }
+
+    @Test
+    void whenGenerateNextNumberWithNonExistingIdThenReturnNotFound() {
+        when(roundService.generateNextNumber(anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/generate-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(roundService, times(1)).generateNextNumber(anyString());
+    }
+
+    @Test
+    void whenGenerateNextNumberWithInvalidIdThenReturnBadRequest() {
+        var invalidId = faker.lorem().word();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + invalidId + "/generate-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
+                });
+        verify(roundService, times(0)).generateNextNumber(anyString());
+    }
+
+    @Test
+    void whenGenerateNextNumberWithFinishedRoundIdThenReturnBadRequest() {
+        when(roundService.generateNextNumber(anyString())).thenReturn(Mono.error(new RoundAlreadyFinishedException("")));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/generate-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                });
+        verify(roundService, times(1)).generateNextNumber(anyString());
     }
 
 }
