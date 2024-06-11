@@ -8,7 +8,7 @@ import me.dio.hiokdev.reactive_bingo.domain.dto.PagedRounds;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import org.mapstruct.Mapper;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BingoCardMapper.class})
 public interface RoundMapper {
 
     RoundResponse toResponse(final Round domainModel);

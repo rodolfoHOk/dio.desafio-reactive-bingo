@@ -12,12 +12,16 @@ import me.dio.hiokdev.reactive_bingo.application.mappers.RoundMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.usecases.RoundUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.dto.PagedRoundsFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
+import me.dio.hiokdev.reactive_bingo.domain.dto.PageableRounds;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.BingoCardAlreadyExistsException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RecursionException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyInitiatedException;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundNotInitiatedException;
 import me.dio.hiokdev.reactive_bingo.domain.models.BingoCard;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.domain.services.RoundService;
@@ -36,14 +40,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -314,6 +321,192 @@ public class RoundControllerTest {
                     assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
                 });
         verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGetLastSortedNumberThenReturnOk() {
+        var lastSortedNumber = faker.number().numberBetween(1, 99);
+        when(roundQueryService.getLastSortedNumber(anyString())).thenReturn(Mono.just(lastSortedNumber));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + roundId + "/current-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(SortedNumberResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.sortedNumber()).isEqualTo(lastSortedNumber);
+                });
+        verify(roundQueryService, times(1)).getLastSortedNumber(anyString());
+    }
+
+    @Test
+    void whenGetLastSortedNumberWithInvalidIdThenReturnBadRequest() {
+        var invalidRoundId = faker.lorem().word();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + invalidRoundId + "/current-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
+                });
+        verify(roundQueryService, times(0)).getLastSortedNumber(anyString());
+    }
+
+    @Test
+    void whenGetLastSortedNumberWithNonExistingIdThenReturnNotFound() {
+        when(roundQueryService.getLastSortedNumber(anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + roundId + "/current-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(roundQueryService, times(1)).getLastSortedNumber(anyString());
+    }
+
+    @Test
+    void whenGetLastSortedNumberWithNonSortedNumberThenReturnBadRequest() {
+        when(roundQueryService.getLastSortedNumber(anyString())).thenReturn(Mono.error(new RoundNotInitiatedException("")));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + roundId + "/current-number")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                });
+        verify(roundQueryService, times(1)).getLastSortedNumber(anyString());
+    }
+
+    @Test
+    void whenFindByIdThenReturnOk() {
+        var round = RoundFactory.createRoundToFinish();
+        when(roundQueryService.findById(anyString())).thenReturn(Mono.just(round));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + roundId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(RoundResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.id()).isEqualTo(round.id());
+                    assertThat(responseBody.bingoCards().size()).isEqualTo(round.bingoCards().size());
+                    assertThat(responseBody.bingoCards().get(0).playerId()).isEqualTo(round.bingoCards().get(0).player().id());
+                    assertThat(responseBody.bingoCards().get(0).numbers()).containsExactlyInAnyOrderElementsOf(round.bingoCards().get(0).numbers());
+                    assertThat(responseBody.bingoCards().get(0).hintCount()).isEqualTo(round.bingoCards().get(0).hintCount());
+                    assertThat(responseBody.sortedNumbers()).containsExactlyElementsOf(round.sortedNumbers());
+                    assertThat(responseBody.winnersIds()).containsExactlyElementsOf(round.winnersIds());
+                });
+        verify(roundQueryService, times(1)).findById(anyString());
+    }
+
+    @Test
+    void whenFindByIdWithInvalidIdThenReturnBadRequest() {
+        var invalidRoundId = faker.lorem().word();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + invalidRoundId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
+                });
+        verify(roundQueryService, times(0)).getLastSortedNumber(anyString());
+    }
+
+    @Test
+    void whenFindByIdWithNonExistingIdThenReturnNotFound() {
+        when(roundQueryService.findById(anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .get()
+                .uri("/rounds/" + roundId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(roundQueryService, times(1)).findById(anyString());
+    }
+
+    @Test
+    void whenFindAllThenReturnOkAndRounds() {
+        var rounds = Stream.generate(() -> RoundFactory.builder().build()).limit(10).toList();
+        when(roundQueryService.findAll()).thenReturn(Flux.fromIterable(rounds));
+
+        this.webTestClient
+                .get()
+                .uri("/rounds")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(RoundResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.size()).isEqualTo(rounds.size());
+                });
+        verify(roundQueryService, times(1)).findAll();
+    }
+
+    @Test
+    void whenFindAllThenReturnOkAndEmpty() {
+        when(roundQueryService.findAll()).thenReturn(Flux.empty());
+
+        this.webTestClient
+                .get()
+                .uri("/rounds")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(RoundResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.size()).isEqualTo(0);
+                });
+        verify(roundQueryService, times(1)).findAll();
+    }
+
+    @Test
+    void whenFindOnDemandThenReturnOk() {
+        var pagedRounds = PagedRoundsFactory.builder(10).build();
+        when(roundQueryService.findOnDemand(any(PageableRounds.class))).thenReturn(Mono.just(pagedRounds));
+
+        
     }
 
 }
