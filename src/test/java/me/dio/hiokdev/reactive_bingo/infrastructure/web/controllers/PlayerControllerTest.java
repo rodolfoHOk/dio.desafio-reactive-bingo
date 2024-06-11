@@ -4,13 +4,20 @@ import com.github.javafaker.Faker;
 import me.dio.hiokdev.reactive_bingo.ReactiveBingoApplication;
 import me.dio.hiokdev.reactive_bingo.application.dto.requests.PlayerRequest;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.FieldErrorResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.PlayerResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.ProblemResponse;
 import me.dio.hiokdev.reactive_bingo.application.mappers.PlayerMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.usecases.PlayerUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.dto.PageablePlayersFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.dto.PagedPlayersFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.request.PageablePlayersRequestFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.request.PageableRoundsRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.request.PlayerRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
+import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
+import me.dio.hiokdev.reactive_bingo.domain.dto.PagedPlayers;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.EmailAlreadyUsedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.models.Player;
@@ -33,8 +40,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriBuilderFactory;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.stream.Stream;
@@ -84,16 +95,17 @@ public class PlayerControllerTest {
 
         webTestClient.post()
                 .uri("/players")
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
                 .expectStatus().isCreated()
-                .expectBody(Player.class)
+                .expectBody(PlayerResponse.class)
                 .value(responseBody -> {
                     assertThat(responseBody).isNotNull();
                     assertThat(responseBody.id()).isNotNull();
                     assertThat(responseBody).usingRecursiveComparison()
-                            .ignoringFields("id", "createdAt", "updatedAt")
+                            .ignoringFields("id")
                             .isEqualTo(requestBody);
                 });
         verify(playerService, times(1)).save(any(Player.class));
@@ -106,6 +118,7 @@ public class PlayerControllerTest {
 
         webTestClient.post()
                 .uri("/players")
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
@@ -137,6 +150,7 @@ public class PlayerControllerTest {
     void whenCreateWithInvalidConstraintWhenReturnBadRequest(final PlayerRequest requestBody, final String field) {
         webTestClient.post()
                 .uri("/players")
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
@@ -163,15 +177,15 @@ public class PlayerControllerTest {
 
         webTestClient.put()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(Player.class)
+                .expectBody(PlayerResponse.class)
                 .value(responseBody -> {
                     assertThat(responseBody).isNotNull();
                     assertThat(responseBody).usingRecursiveComparison()
-                            .ignoringFields("createdAt", "updatedAt")
                             .isEqualTo(requestBody);
                 });
         verify(playerService, times(1)).update(any(Player.class));
@@ -185,6 +199,7 @@ public class PlayerControllerTest {
 
         webTestClient.put()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
@@ -205,6 +220,7 @@ public class PlayerControllerTest {
 
         webTestClient.put()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
@@ -239,6 +255,7 @@ public class PlayerControllerTest {
     void whenUpdateWithInvalidConstraintWhenReturnBadRequest(final String playerId, final PlayerRequest requestBody, final String field) {
         webTestClient.put()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .exchange()
@@ -259,6 +276,7 @@ public class PlayerControllerTest {
 
         webTestClient.delete()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isNoContent();
         verify(playerService, times(1)).delete(anyString());
@@ -271,6 +289,7 @@ public class PlayerControllerTest {
 
         webTestClient.delete()
                 .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isNotFound()
                 .expectBody(ProblemResponse.class)
@@ -287,6 +306,7 @@ public class PlayerControllerTest {
 
         webTestClient.delete()
                 .uri("/players/" + invalidPlayerId)
+                .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody(ProblemResponse.class)
@@ -296,6 +316,61 @@ public class PlayerControllerTest {
                     assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
                 });
         verify(playerService, times(0)).delete(anyString());
+    }
+
+    @Test
+    void whenFindByIdThenReturnOk() {
+        var player = PlayerFactory.builder().build();
+        when(playerQueryService.findById(anyString())).thenReturn(Mono.just(player));
+
+        webTestClient.get()
+                .uri("/players/" + player.id())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PlayerResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody).usingRecursiveComparison()
+                            .isEqualTo(player);
+                });
+        verify(playerQueryService, times(1)).findById(anyString());
+    }
+
+    @Test
+    void whenFindByIdWithNonExistingIdThenReturnNotFound() {
+        when(playerQueryService.findById(anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var playerId = ObjectId.get().toString();
+
+        webTestClient.get()
+                .uri("/players/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(playerQueryService, times(1)).findById(anyString());
+    }
+
+    @Test
+    void whenFindByIdWithInvalidIdThenReturnBadRequest() {
+        var invalidPlayerId = faker.lorem().word();
+
+        webTestClient.get()
+                .uri("/players/" + invalidPlayerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name)).contains("id");
+                });
+        verify(playerQueryService, times(0)).findById(anyString());
     }
 
 }
