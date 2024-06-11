@@ -2,6 +2,7 @@ package me.dio.hiokdev.reactive_bingo.infrastructure.web.controllers;
 
 import com.github.javafaker.Faker;
 import me.dio.hiokdev.reactive_bingo.ReactiveBingoApplication;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.BingoCardResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.FieldErrorResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.ProblemResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.RoundResponse;
@@ -10,10 +11,14 @@ import me.dio.hiokdev.reactive_bingo.application.mappers.BingoCardMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.mappers.RoundMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.usecases.RoundUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
-import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.BingoCardAlreadyExistsException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RecursionException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyFinishedException;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RoundAlreadyInitiatedException;
+import me.dio.hiokdev.reactive_bingo.domain.models.BingoCard;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
 import me.dio.hiokdev.reactive_bingo.domain.services.RoundService;
 import me.dio.hiokdev.reactive_bingo.domain.services.query.RoundQueryService;
@@ -35,6 +40,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,6 +171,149 @@ public class RoundControllerTest {
                     assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
                 });
         verify(roundService, times(1)).generateNextNumber(anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardThenReturnOk() {
+        var player = PlayerFactory.builder().build();
+        var generatedBingoCard = Objects.requireNonNull(BingoCard.builder().generate(player, List.of()).block()).build();
+        when(roundService.generateBingoCard(anyString(), anyString())).thenReturn(Mono.just(generatedBingoCard));
+        var roundId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + player.id())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(BingoCardResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.playerId()).isEqualTo(player.id());
+                    assertThat(responseBody.numbers()).containsExactlyInAnyOrderElementsOf(generatedBingoCard.numbers());
+                    assertThat(responseBody.hintCount()).isEqualTo(0);
+                });
+        verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardWithInvalidRoundIdThenReturnBadRequest() {
+        var invalidRoundId = faker.lorem().word();
+        var playerId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + invalidRoundId + "/bingo-card/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
+                });
+        verify(roundService, times(0)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardWithInvalidPlayerIdThenReturnBadRequest() {
+        var roundId = ObjectId.get().toString();
+        var invalidPlayerId = faker.lorem().word();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + invalidPlayerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("playerId");
+                });
+        verify(roundService, times(0)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardWithPlayerAlreadyHasBingoCardThenReturnBadRequest() {
+        when(roundService.generateBingoCard(anyString(), anyString())).thenReturn(Mono.error(new BingoCardAlreadyExistsException("")));
+        var roundId = ObjectId.get().toString();
+        var playerId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                });
+        verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardWithRoundHasAlreadyInitiatedThenReturnBadRequest() {
+        when(roundService.generateBingoCard(anyString(), anyString())).thenReturn(Mono.error(new RoundAlreadyInitiatedException("")));
+        var roundId = ObjectId.get().toString();
+        var playerId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                });
+        verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardAndHasManyBingoCardsThenReturnLoopDetected() {
+        when(roundService.generateBingoCard(anyString(), anyString())).thenReturn(Mono.error(new RecursionException("")));
+        var roundId = ObjectId.get().toString();
+        var playerId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.LOOP_DETECTED.value());
+                });
+        verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
+    }
+
+    @Test
+    void whenGenerateBingoCardWithNonExistingIdOrPlayerIdThenReturnNotFound() {
+        when(roundService.generateBingoCard(anyString(), anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var roundId = ObjectId.get().toString();
+        var playerId = ObjectId.get().toString();
+
+        this.webTestClient
+                .post()
+                .uri("/rounds/" + roundId + "/bingo-card/" + playerId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(roundService, times(1)).generateBingoCard(anyString(), anyString());
     }
 
 }
