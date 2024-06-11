@@ -4,6 +4,7 @@ import com.github.javafaker.Faker;
 import me.dio.hiokdev.reactive_bingo.ReactiveBingoApplication;
 import me.dio.hiokdev.reactive_bingo.application.dto.requests.PlayerRequest;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.FieldErrorResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedPlayersResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.PlayerResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.ProblemResponse;
 import me.dio.hiokdev.reactive_bingo.application.mappers.PlayerMapperImpl;
@@ -388,7 +389,7 @@ public class PlayerControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(PagedPlayers.class)
+                .expectBody(PagedPlayersResponse.class)
                 .value(responseBody -> {
                     assertThat(responseBody).isNotNull();
                     assertThat(responseBody.content().size()).isEqualTo(pagedPlayers.content().size());
@@ -415,7 +416,7 @@ public class PlayerControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(PagedPlayers.class)
+                .expectBody(PagedPlayersResponse.class)
                 .value(responseBody -> {
                     assertThat(responseBody).isNotNull();
                     assertThat(responseBody.content().size()).isEqualTo(0);

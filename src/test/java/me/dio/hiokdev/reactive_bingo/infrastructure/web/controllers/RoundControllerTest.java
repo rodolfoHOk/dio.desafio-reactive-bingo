@@ -4,6 +4,7 @@ import com.github.javafaker.Faker;
 import me.dio.hiokdev.reactive_bingo.ReactiveBingoApplication;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.BingoCardResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.FieldErrorResponse;
+import me.dio.hiokdev.reactive_bingo.application.dto.responses.PagedRoundsResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.ProblemResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.RoundResponse;
 import me.dio.hiokdev.reactive_bingo.application.dto.responses.SortedNumberResponse;
@@ -14,6 +15,7 @@ import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.dto.PagedRoundsFactory;
+import me.dio.hiokdev.reactive_bingo.core.factory.request.PageableRoundsRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PageableRounds;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.BingoCardAlreadyExistsException;
@@ -31,6 +33,9 @@ import me.dio.hiokdev.reactive_bingo.infractructure.web.expectionhandler.ApiExce
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
@@ -40,9 +45,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -502,11 +509,153 @@ public class RoundControllerTest {
     }
 
     @Test
-    void whenFindOnDemandThenReturnOk() {
+    void whenFindOnDemandThenReturnOkAndContents() {
         var pagedRounds = PagedRoundsFactory.builder(10).build();
         when(roundQueryService.findOnDemand(any(PageableRounds.class))).thenReturn(Mono.just(pagedRounds));
+        var queryParams = PageableRoundsRequestFactory.builder().build();
+        URI uri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", queryParams.sentence())
+                .queryParam("startDate", queryParams.startDate())
+                .queryParam("endDate", queryParams.endDate())
+                .queryParam("page", queryParams.page())
+                .queryParam("limit", queryParams.limit())
+                .queryParam("sortBy", queryParams.sortBy())
+                .queryParam("sortDirection", queryParams.sortDirection())
+                .build();
 
-        
+        this.webTestClient
+                .get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PagedRoundsResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.content().size()).isEqualTo(pagedRounds.content().size());
+                });
+        verify(roundQueryService, times(1)).findOnDemand(any(PageableRounds.class));
+    }
+
+    @Test
+    void whenFindOnDemandThenReturnOkAndContentsEmpty() {
+        var pagedRounds = PagedRoundsFactory.builder(10).emptyPage().build();
+        when(roundQueryService.findOnDemand(any(PageableRounds.class))).thenReturn(Mono.just(pagedRounds));
+        var queryParams = PageableRoundsRequestFactory.builder().build();
+        URI uri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", queryParams.sentence())
+                .queryParam("startDate", queryParams.startDate())
+                .queryParam("endDate", queryParams.endDate())
+                .queryParam("page", queryParams.page())
+                .queryParam("limit", queryParams.limit())
+                .queryParam("sortBy", queryParams.sortBy())
+                .queryParam("sortDirection", queryParams.sortDirection())
+                .build();
+
+        this.webTestClient
+                .get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PagedRoundsResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.content().size()).isEqualTo(0);
+                });
+        verify(roundQueryService, times(1)).findOnDemand(any(PageableRounds.class));
+    }
+
+    private static Stream<Arguments> whenFindOnDemandWithInvalidConstraintsThenReturnBadRequest() {
+        var negativePageParams = PageableRoundsRequestFactory.builder().negativePage().build();
+        var negativePageUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", negativePageParams.sentence())
+                .queryParam("startDate", negativePageParams.startDate())
+                .queryParam("endDate", negativePageParams.endDate())
+                .queryParam("page", negativePageParams.page())
+                .queryParam("limit", negativePageParams.limit())
+                .queryParam("sortBy", negativePageParams.sortBy())
+                .queryParam("sortDirection", negativePageParams.sortDirection())
+                .build();
+        var futureStartDateParams = PageableRoundsRequestFactory.builder().futureStartDate().build();
+        var futureStartDateUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", futureStartDateParams.sentence())
+                .queryParam("startDate", futureStartDateParams.startDate())
+                .queryParam("endDate", futureStartDateParams.endDate())
+                .queryParam("page", futureStartDateParams.page())
+                .queryParam("limit", futureStartDateParams.limit())
+                .queryParam("sortBy", futureStartDateParams.sortBy())
+                .queryParam("sortDirection", futureStartDateParams.sortDirection())
+                .build();
+        var futureEndDateParams = PageableRoundsRequestFactory.builder().futureEndDate().build();
+        var futureEndDateUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", futureEndDateParams.sentence())
+                .queryParam("startDate", futureEndDateParams.startDate())
+                .queryParam("endDate", futureEndDateParams.endDate())
+                .queryParam("page", futureEndDateParams.page())
+                .queryParam("limit", futureEndDateParams.limit())
+                .queryParam("sortBy", futureEndDateParams.sortBy())
+                .queryParam("sortDirection", futureEndDateParams.sortDirection())
+                .build();
+        var lessThanZeroLimitParams = PageableRoundsRequestFactory.builder().lessThanZeroLimit().build();
+        var lessThanZeroLimitUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", lessThanZeroLimitParams.sentence())
+                .queryParam("startDate", lessThanZeroLimitParams.startDate())
+                .queryParam("endDate", lessThanZeroLimitParams.endDate())
+                .queryParam("page", lessThanZeroLimitParams.page())
+                .queryParam("limit", lessThanZeroLimitParams.limit())
+                .queryParam("sortBy", lessThanZeroLimitParams.sortBy())
+                .queryParam("sortDirection", lessThanZeroLimitParams.sortDirection())
+                .build();
+        var greaterThanFiftyLimitParams = PageableRoundsRequestFactory.builder().greaterThanFiftyLimit().build();
+        var greaterThanFiftyLimitUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("rounds")
+                .pathSegment("search")
+                .queryParam("sentence", greaterThanFiftyLimitParams.sentence())
+                .queryParam("startDate", greaterThanFiftyLimitParams.startDate())
+                .queryParam("endDate", greaterThanFiftyLimitParams.endDate())
+                .queryParam("page", greaterThanFiftyLimitParams.page())
+                .queryParam("limit", greaterThanFiftyLimitParams.limit())
+                .queryParam("sortBy", greaterThanFiftyLimitParams.sortBy())
+                .queryParam("sortDirection", greaterThanFiftyLimitParams.sortDirection())
+                .build();
+        return Stream.of(
+                Arguments.of(negativePageUri, "page"),
+                Arguments.of(futureStartDateUri, "startDate"),
+                Arguments.of(futureEndDateUri, "endDate"),
+                Arguments.of(lessThanZeroLimitUri, "limit"),
+                Arguments.of(greaterThanFiftyLimitUri, "limit")
+        );
+    }
+
+    @MethodSource
+    @ParameterizedTest
+    void whenFindOnDemandWithInvalidConstraintsThenReturnBadRequest(final URI uri, final String fieldName) {
+        this.webTestClient
+                .get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains(fieldName);
+                });
+        verify(roundQueryService, times(0)).findOnDemand(any(PageableRounds.class));
     }
 
 }

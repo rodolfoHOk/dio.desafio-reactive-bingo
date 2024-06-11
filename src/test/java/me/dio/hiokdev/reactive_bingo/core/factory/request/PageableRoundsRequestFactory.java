@@ -32,7 +32,7 @@ public class PageableRoundsRequestFactory {
 
         public PageableRoundsRequestFactoryBuilder() {
             this.sentence = faker.lorem().sentence();
-            this.startDate = faker.date().past(365, TimeUnit.DAYS).toInstant().atOffset(ZoneOffset.ofHours(-3));
+            this.startDate = (faker.date().past(365, TimeUnit.DAYS).toInstant()).atOffset(ZoneOffset.ofHours(-3));
             this.endDate = OffsetDateTime.now();
             this.page = faker.number().numberBetween(0L, 3L);
             this.limit = faker.number().numberBetween(20, 40);
@@ -68,6 +68,8 @@ public class PageableRoundsRequestFactory {
         public PageableRoundsRequest build() {
             return PageableRoundsRequest.builder()
                     .sentence(sentence)
+                    .startDate(startDate)
+                    .endDate(endDate)
                     .page(page)
                     .limit(limit)
                     .sortBy(sortBy)
