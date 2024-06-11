@@ -10,10 +10,8 @@ import me.dio.hiokdev.reactive_bingo.application.mappers.PlayerMapperImpl;
 import me.dio.hiokdev.reactive_bingo.application.usecases.PlayerUseCasesImpl;
 import me.dio.hiokdev.reactive_bingo.core.factory.FakerData;
 import me.dio.hiokdev.reactive_bingo.core.factory.domain.PlayerFactory;
-import me.dio.hiokdev.reactive_bingo.core.factory.dto.PageablePlayersFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.dto.PagedPlayersFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.request.PageablePlayersRequestFactory;
-import me.dio.hiokdev.reactive_bingo.core.factory.request.PageableRoundsRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.factory.request.PlayerRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
@@ -41,8 +39,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilder;
-import org.springframework.web.util.UriBuilderFactory;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -371,6 +367,112 @@ public class PlayerControllerTest {
                     assertThat(responseBody.fields().stream().map(FieldErrorResponse::name)).contains("id");
                 });
         verify(playerQueryService, times(0)).findById(anyString());
+    }
+
+    @Test
+    void whenFindOnDemandThenReturnOkAndContents() {
+        var pagedPlayers = PagedPlayersFactory.builder(10).build();
+        when(playerQueryService.findOnDemand(any(PageablePlayers.class))).thenReturn(Mono.just(pagedPlayers));
+        var queryParams = PageablePlayersRequestFactory.builder().build();
+        URI uri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("players")
+                .queryParam("sentence", queryParams.sentence())
+                .queryParam("page", queryParams.page())
+                .queryParam("limit", queryParams.limit())
+                .queryParam("sortBy", queryParams.sortBy())
+                .queryParam("sortDirection", queryParams.sortDirection())
+                .build();
+
+        webTestClient.get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PagedPlayers.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.content().size()).isEqualTo(pagedPlayers.content().size());
+                });
+        verify(playerQueryService, times(1)).findOnDemand(any(PageablePlayers.class));
+    }
+
+    @Test
+    void whenFindOnDemandThenReturnOkAndContentsEmpty() {
+        var pagedPlayers = PagedPlayersFactory.builder(10).emptyPage().build();
+        when(playerQueryService.findOnDemand(any(PageablePlayers.class))).thenReturn(Mono.just(pagedPlayers));
+        var queryParams = PageablePlayersRequestFactory.builder().build();
+        URI uri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("players")
+                .queryParam("sentence", queryParams.sentence())
+                .queryParam("page", queryParams.page())
+                .queryParam("limit", queryParams.limit())
+                .queryParam("sortBy", queryParams.sortBy())
+                .queryParam("sortDirection", queryParams.sortDirection())
+                .build();
+
+        webTestClient.get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PagedPlayers.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.content().size()).isEqualTo(0);
+                });
+        verify(playerQueryService, times(1)).findOnDemand(any(PageablePlayers.class));
+    }
+
+    private static Stream<Arguments> whenFindOnDemandWithInvalidConstraintThenReturnBadRequest() {
+        var negativePageParams = PageablePlayersRequestFactory.builder().negativePage().build();
+        var negativePageUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("players")
+                .queryParam("sentence", negativePageParams.sentence())
+                .queryParam("page", negativePageParams.page())
+                .queryParam("limit", negativePageParams.limit())
+                .queryParam("sortBy", negativePageParams.sortBy())
+                .queryParam("sortDirection", negativePageParams.sortDirection())
+                .build();
+        var lessThanZeroLimitParams = PageablePlayersRequestFactory.builder().lessThanZeroLimit().build();
+        var lessThanZeroLimitUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("players")
+                .queryParam("sentence", lessThanZeroLimitParams.sentence())
+                .queryParam("page", lessThanZeroLimitParams.page())
+                .queryParam("limit", lessThanZeroLimitParams.limit())
+                .queryParam("sortBy", lessThanZeroLimitParams.sortBy())
+                .queryParam("sortDirection", lessThanZeroLimitParams.sortDirection())
+                .build();
+        var greaterThanFiftyLimitParams = PageablePlayersRequestFactory.builder().greaterThanFiftyLimit().build();
+        var greaterThanFiftyLimitUri = new DefaultUriBuilderFactory().builder()
+                .pathSegment("players")
+                .queryParam("sentence", greaterThanFiftyLimitParams.sentence())
+                .queryParam("page", greaterThanFiftyLimitParams.page())
+                .queryParam("limit", greaterThanFiftyLimitParams.limit())
+                .queryParam("sortBy", greaterThanFiftyLimitParams.sortBy())
+                .queryParam("sortDirection", greaterThanFiftyLimitParams.sortDirection())
+                .build();
+        return Stream.of(
+                Arguments.of(negativePageUri, "page"),
+                Arguments.of(lessThanZeroLimitUri, "limit"),
+                Arguments.of(greaterThanFiftyLimitUri, "limit")
+        );
+    }
+
+    @MethodSource
+    @ParameterizedTest
+    void whenFindOnDemandWithInvalidConstraintThenReturnBadRequest(final URI uri, final String field) {
+        webTestClient.get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name)).contains(field);
+                });
+        verify(playerQueryService, times(0)).findOnDemand(any(PageablePlayers.class));
     }
 
 }
