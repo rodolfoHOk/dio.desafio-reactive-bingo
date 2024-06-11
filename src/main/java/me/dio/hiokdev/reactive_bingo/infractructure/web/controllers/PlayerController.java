@@ -11,6 +11,7 @@ import me.dio.hiokdev.reactive_bingo.core.validation.MongoId;
 import me.dio.hiokdev.reactive_bingo.infractructure.web.controllers.documentation.PlayerControllerDoc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+@Validated
 @RestController
 @RequestMapping("players")
 @RequiredArgsConstructor
