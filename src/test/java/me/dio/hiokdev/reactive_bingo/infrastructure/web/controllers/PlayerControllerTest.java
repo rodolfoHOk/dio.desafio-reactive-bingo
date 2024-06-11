@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -250,4 +251,51 @@ public class PlayerControllerTest {
                 });
         verify(playerService, times(0)).update(any(Player.class));
     }
+
+    @Test
+    void whenDeleteWhenReturnNoContent() {
+        when(playerService.delete(anyString())).thenReturn(Mono.empty());
+        var playerId = ObjectId.get().toString();
+
+        webTestClient.delete()
+                .uri("/players/" + playerId)
+                .exchange()
+                .expectStatus().isNoContent();
+        verify(playerService, times(1)).delete(anyString());
+    }
+
+    @Test
+    void whenDeleteWithNonExistingIdWhenReturnNotFound() {
+        when(playerService.delete(anyString())).thenReturn(Mono.error(new NotFoundException("")));
+        var playerId = ObjectId.get().toString();
+
+        webTestClient.delete()
+                .uri("/players/" + playerId)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
+                });
+        verify(playerService, times(1)).delete(anyString());
+    }
+
+    @Test
+    void whenDeleteWithInvalidIdWhenReturnBadRequest() {
+        var invalidPlayerId = faker.lorem().word();
+
+        webTestClient.delete()
+                .uri("/players/" + invalidPlayerId)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ProblemResponse.class)
+                .value(responseBody -> {
+                    assertThat(responseBody).isNotNull();
+                    assertThat(responseBody.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(responseBody.fields().stream().map(FieldErrorResponse::name).toList()).contains("id");
+                });
+        verify(playerService, times(0)).delete(anyString());
+    }
+
 }
