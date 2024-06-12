@@ -18,7 +18,7 @@ public record PageableRounds(
         SortDirection sortDirection
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PageableRounds {
         sentence = ObjectUtils.defaultIfNull(sentence, "");
         startDate = ObjectUtils.defaultIfNull(startDate, OffsetDateTime

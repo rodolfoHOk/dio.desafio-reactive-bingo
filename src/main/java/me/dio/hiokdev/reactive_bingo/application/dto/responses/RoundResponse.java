@@ -33,7 +33,7 @@ public record RoundResponse(
         OffsetDateTime createdAt
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public RoundResponse {
     }
 

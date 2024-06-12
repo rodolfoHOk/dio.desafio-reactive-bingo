@@ -20,7 +20,7 @@ public record BingoCardResponse(
         Integer hintCount
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public BingoCardResponse {
     }
 

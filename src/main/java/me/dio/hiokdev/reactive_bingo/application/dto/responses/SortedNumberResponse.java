@@ -10,7 +10,7 @@ public record SortedNumberResponse(
         Integer sortedNumber
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public SortedNumberResponse {
     }
 

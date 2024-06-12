@@ -12,7 +12,7 @@ public record PagedPlayers(
         List<Player> content
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PagedPlayers {
     }
 

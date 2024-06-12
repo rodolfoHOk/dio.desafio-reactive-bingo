@@ -12,7 +12,7 @@ public record PagedRounds(
         List<Round> content
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PagedRounds {
     }
 

@@ -14,7 +14,7 @@ public record FieldErrorResponse(
         String message
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public FieldErrorResponse {
     }
 

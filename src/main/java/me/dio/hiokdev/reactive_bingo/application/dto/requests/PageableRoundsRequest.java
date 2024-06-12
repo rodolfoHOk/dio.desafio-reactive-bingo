@@ -49,7 +49,7 @@ public record PageableRoundsRequest(
         SortDirection sortDirection
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PageableRoundsRequest {
         sentence = ObjectUtils.defaultIfNull(sentence, "");
         startDate = ObjectUtils.defaultIfNull(startDate, OffsetDateTime.of(1900, 1,1,0,0,0,0, ZoneOffset.ofHours(-3)));

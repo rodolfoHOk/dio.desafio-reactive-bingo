@@ -31,7 +31,7 @@ public class PageableRoundsRequestFactory {
         private final Faker faker = FakerData.getFaker();
 
         public PageableRoundsRequestFactoryBuilder() {
-            this.sentence = faker.lorem().sentence();
+            this.sentence = faker.lorem().word();
             this.startDate = (faker.date().past(365, TimeUnit.DAYS).toInstant()).atOffset(ZoneOffset.ofHours(-3));
             this.endDate = OffsetDateTime.now();
             this.page = faker.number().numberBetween(0L, 3L);

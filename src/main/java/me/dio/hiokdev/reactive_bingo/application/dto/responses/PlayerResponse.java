@@ -18,7 +18,7 @@ public record PlayerResponse(
         String email
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PlayerResponse {
     }
 

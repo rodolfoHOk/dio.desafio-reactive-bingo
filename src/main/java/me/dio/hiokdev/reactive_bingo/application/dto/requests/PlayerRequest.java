@@ -22,7 +22,7 @@ public record PlayerRequest(
         String email
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PlayerRequest {
     }
 

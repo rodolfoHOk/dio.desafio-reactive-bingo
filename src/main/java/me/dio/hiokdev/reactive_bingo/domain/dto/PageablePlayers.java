@@ -13,7 +13,7 @@ public record PageablePlayers(
         SortDirection sortDirection
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PageablePlayers {
         sentence = ObjectUtils.defaultIfNull(sentence, "");
         page = ObjectUtils.defaultIfNull(page, 1L);

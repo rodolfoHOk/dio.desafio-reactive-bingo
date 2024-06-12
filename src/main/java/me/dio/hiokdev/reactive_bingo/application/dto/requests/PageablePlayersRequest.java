@@ -35,7 +35,7 @@ public record PageablePlayersRequest(
         SortDirection sortDirection
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PageablePlayersRequest {
         sentence = ObjectUtils.defaultIfNull(sentence, "");
         page = ObjectUtils.defaultIfNull(page, 1L);

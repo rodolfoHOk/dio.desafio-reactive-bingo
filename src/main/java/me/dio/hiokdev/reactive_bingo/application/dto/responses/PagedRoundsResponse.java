@@ -24,7 +24,7 @@ public record PagedRoundsResponse(
         List<RoundResponse> content
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public PagedRoundsResponse {
     }
 

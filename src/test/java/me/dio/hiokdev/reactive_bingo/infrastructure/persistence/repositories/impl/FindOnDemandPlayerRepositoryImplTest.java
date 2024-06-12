@@ -86,8 +86,8 @@ public class FindOnDemandPlayerRepositoryImplTest {
     @Test
     void whenCountFilterBySentenceThenReturnInteger() {
         var selectRandomDocument = storedDocuments.get(faker.number().numberBetween(0, storedDocuments.size()));
-        var sentence = faker.bool().bool() ? selectRandomDocument.name().substring(1, 3)
-                : selectRandomDocument.email().substring(1, 3);
+        var sentence = faker.bool().bool() ? selectRandomDocument.name().substring(1, 4).trim()
+                : selectRandomDocument.email().substring(1, 4).trim();
         var pageable = PageablePlayers.builder().sentence(sentence).build();
 
         StepVerifier.create(findOnDemandPlayerRepository.count(pageable))

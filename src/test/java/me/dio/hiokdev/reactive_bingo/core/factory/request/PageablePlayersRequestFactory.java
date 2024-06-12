@@ -25,7 +25,7 @@ public class PageablePlayersRequestFactory {
         private final Faker faker = FakerData.getFaker();
 
         public PageablePlayersRequestFactoryBuilder() {
-            this.sentence = faker.lorem().sentence();
+            this.sentence = faker.lorem().word();
             this.page = faker.number().numberBetween(0L, 3L);
             this.limit = faker.number().numberBetween(20, 40);
             this.sortBy = FakerData.randomEnum(PlayerSortBy.class);
