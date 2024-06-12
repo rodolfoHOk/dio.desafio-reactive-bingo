@@ -18,14 +18,14 @@ public class QueryBuilder {
     public Mono<Query> buildWhere(final Query query, final String sentence, final String field) {
         return Mono.just(query)
                 .filter(q -> StringUtils.isNotBlank(sentence))
-                .switchIfEmpty(Mono.just(query))
+                .switchIfEmpty(Mono.defer(() -> Mono.just(query)))
                 .flatMap(q -> setWhereClause(q, Criteria.where(field).regex(sentence, "i")));
     }
 
     public Mono<Query> buildWhere(final Query query, final String sentence, final List<String> fields) {
         return Mono.just(query)
                 .filter(q -> StringUtils.isNotBlank(sentence))
-                .switchIfEmpty(Mono.just(query))
+                .switchIfEmpty(Mono.defer(() -> Mono.just(query)))
                 .flatMapMany(q -> Flux.fromIterable(fields))
                 .map(field -> Criteria.where(field).regex(sentence, "i"))
                 .collectList()

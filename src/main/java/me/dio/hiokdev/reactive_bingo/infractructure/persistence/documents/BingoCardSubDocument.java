@@ -15,7 +15,7 @@ public record BingoCardSubDocument(
         @Field("updated_at") OffsetDateTime updatedAt
 ) {
 
-    @Builder(toBuilder = true)
+    @Builder
     public BingoCardSubDocument {
     }
 
