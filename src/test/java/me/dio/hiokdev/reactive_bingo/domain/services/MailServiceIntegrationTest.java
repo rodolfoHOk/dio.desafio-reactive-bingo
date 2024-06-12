@@ -11,6 +11,7 @@ import me.dio.hiokdev.reactive_bingo.core.factory.domain.RoundFactory;
 import me.dio.hiokdev.reactive_bingo.core.retry.RetryConfig;
 import me.dio.hiokdev.reactive_bingo.core.retry.RetryHelper;
 import me.dio.hiokdev.reactive_bingo.domain.dto.MailMessage;
+import me.dio.hiokdev.reactive_bingo.domain.exceptions.RetryException;
 import me.dio.hiokdev.reactive_bingo.domain.gateways.MailGateway;
 import me.dio.hiokdev.reactive_bingo.domain.models.BingoCard;
 import me.dio.hiokdev.reactive_bingo.domain.models.Round;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -44,13 +46,16 @@ public class MailServiceIntegrationTest {
     private static final String USER = "teste@teste.com.br";
     private static final String PASSWORD = "123456";
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     private String sender;
     private GreenMail smtpServer;
     private MailService mailService;
     private final Faker faker = FakerData.getFaker();
 
     @BeforeEach
-    void setup(ApplicationContext applicationContext) {
+    void setup() {
         this.smtpServer = createSmtpServer(PORT, USER, PASSWORD);
         this.sender = faker.internet().emailAddress();
         var host = smtpServer.getSmtp().getServerSetup().getBindAddress();
@@ -99,6 +104,23 @@ public class MailServiceIntegrationTest {
         assertThat(message.getRecipients(Message.RecipientType.TO))
                 .contains(new InternetAddress(mailMessage.destination()));
         assertThat(message.getHeader("FROM")).contains(sender);
+    }
+
+    @Test
+    void whenSendWithInvalidHostThenThrowRetryException() {
+        Round round = RoundFactory.builder().build();
+        round = RoundFactory.generateCards(10, round);
+        round = RoundFactory.generateSortedNumbers(30, round);
+        BingoCard bingoCard = round.bingoCards().get(0);
+        MailMessage mailMessage = MailMessage.create(round, bingoCard.player(), bingoCard);
+
+        JavaMailSender mailSender = createMailSender("invalid.host.com", PORT, USER, PASSWORD);
+        TemplateEngine templateEngine = createTemplateEngine(applicationContext);
+        RetryHelper retryHelper = new RetryHelper(new RetryConfig(1L, 1L));
+        MailGateway mailGateway = new MailGatewayImpl(sender, mailSender, templateEngine, retryHelper);
+        this.mailService = new MailService(mailGateway);
+
+        StepVerifier.create(mailService.send(mailMessage)).verifyError(RetryException.class);
     }
 
     private GreenMail createSmtpServer(Integer port, String user, String password) {
