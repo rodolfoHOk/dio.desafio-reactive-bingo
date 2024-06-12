@@ -16,7 +16,6 @@ import me.dio.hiokdev.reactive_bingo.core.factory.request.PageablePlayersRequest
 import me.dio.hiokdev.reactive_bingo.core.factory.request.PlayerRequestFactory;
 import me.dio.hiokdev.reactive_bingo.core.mongo.OffsetDateTimeProvider;
 import me.dio.hiokdev.reactive_bingo.domain.dto.PageablePlayers;
-import me.dio.hiokdev.reactive_bingo.domain.dto.PagedPlayers;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.EmailAlreadyUsedException;
 import me.dio.hiokdev.reactive_bingo.domain.exceptions.NotFoundException;
 import me.dio.hiokdev.reactive_bingo.domain.models.Player;
