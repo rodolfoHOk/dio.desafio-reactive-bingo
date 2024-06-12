@@ -81,3 +81,29 @@ Sugestão de endpoints:
 - lombok-mapstruct-binding
 - commons-lang3
 - springdoc-openapi-starter-webflux-ui
+- thymeleaf-extras-java8time
+
+### Bibliotecas utilizadas para testes
+
+- spring-boot-starter-test
+- reactor-test
+- javafaker
+- snakeyaml
+- lombok
+- greenmail
+- junit-platform-launcher
+
+## Rodar
+
+### Requisitos
+
+- Java 21
+- Docker
+
+### Comandos
+
+- docker compose -f docker-compose-test.yaml up -d
+- ./gradlew clean build
+- docker compose -f docker-compose-test.yaml down
+- docker compose up -d
+- java -jar build/libs/reactive-bingo-1.0.0.jar
