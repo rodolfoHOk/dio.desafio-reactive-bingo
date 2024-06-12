@@ -61,6 +61,7 @@ Sugestão de endpoints:
 - Spring WebFlux (Reactive Web Rest API)
 - MongoDB
 - Docker
+- mailcatcher (Simple SMTP server for development)
 
 ## Boas práticas
 
@@ -73,8 +74,6 @@ Sugestão de endpoints:
 - spring-boot-starter-validation
 - spring-boot-starter-mail
 - spring-boot-starter-thymeleaf
-- spring-boot-starter-test
-- reactor-test
 - lombok
 - mapstruct
 - mapstruct-processor
