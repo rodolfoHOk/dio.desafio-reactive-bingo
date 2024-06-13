@@ -1,4 +1,4 @@
-# Desafio do curso Spring WebFlux: Reactive Bingo (in development)
+# Desafio do curso Spring WebFlux: Reactive Bingo
 
 Criar uma API de jogo de Bingo usando as seguintes tecnologias:
 

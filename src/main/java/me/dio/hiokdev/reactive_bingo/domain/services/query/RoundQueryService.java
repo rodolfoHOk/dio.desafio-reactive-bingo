@@ -47,7 +47,7 @@ public class RoundQueryService {
         return this.findById(id)
                 .flatMap(Round::getLastSortedNumber)
                 .onErrorResume(NoSuchElementException.class, e -> Mono
-                        .error(new RoundNotInitiatedException(BaseErrorMessage.ROUND_NOT_INITIATED.getMessage())));
+                        .error(new RoundNotInitiatedException(BaseErrorMessage.ROUND_NOT_INITIATED.params(id).getMessage())));
     }
 
 }
